@@ -75,7 +75,7 @@ bool ConfusableMatcher::AddMapping(char Key, std::string Value, bool CheckValueD
 	}
 }
 
-ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap, bool MakeAllUpper)
+ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap)
 {
 	TheMap.set_empty_key(U'\x0');
 	TheMap.set_deleted_key(U'\x1');

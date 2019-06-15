@@ -18,7 +18,7 @@ class ConfusableMatcher
 		GetMatchedLengthSingleChar(std::string_view In, char Match);
 
 	public:
-	ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap, bool MakeAllUpper);
+	ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap);
 	bool
 		AddMapping(char Key, std::string Value, bool CheckValueDuplicate);
 	bool
