@@ -16,4 +16,4 @@ endif()
 
 include_directories(ConfusableMatcher "sparsehash/src" "sparsehash/src/windows")
 
-add_executable(ConfusableMatcher "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h")
+add_library(SHARED ConfusableMatcher "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h")
