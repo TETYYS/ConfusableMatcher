@@ -3,44 +3,24 @@
 
 #include "ConfusableMatcher.h"
 
-Str32::Str32(std::u32string In)
+bool ConfusableMatcher::RemoveMapping(char Key, std::string Value)
 {
-	Str = std::u32string(In.begin(), In.end());
-}
-
-#if _MSC_VER >= 1900
-Str32::Str32(std::wstring_convert<std::codecvt_utf8<int32_t>, int32_t> *convert, std::string &In)
-#else
-Str32::Str32(std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> *convert, std::string &In)
-#endif
-{
-#if _MSC_VER >= 1900
-	auto asInt = convert->from_bytes(In);
-	Str = std::u32string(reinterpret_cast<char32_t const *>(asInt.data()), asInt.length());
-#else
-	Str = conv.from_bytes(In);
-#endif
-}
-
-bool ConfusableMatcher::RemoveMapping(char32_t Key, std::string Value)
-{
-	dense_hash_map<char32_t, std::vector<Str32> *> *dict;
+	dense_hash_map<char, std::vector<std::string> *> *dict;
 
 	if ((dict = TheMap[Key]) == nullptr)
 		return false;
 
-	auto v = Str32(Convert, Value);
-	std::vector<Str32> *foundArr;
+	std::vector<std::string> *foundArr;
 
-	if ((foundArr = (*dict)[v.Str[0]]) == nullptr)
+	if ((foundArr = (*dict)[Value[0]]) == nullptr)
 		return false;
 	
 	for (auto it = foundArr->begin();it != foundArr->end(); ++it) {
-		if (it->Str == v.Str) {
+		if (*it == Value) {
 			foundArr->erase(it);
 
 			if (foundArr->size() == 0) {
-				(*dict).erase(v.Str[0]);
+				(*dict).erase(Value[0]);
 				delete foundArr;
 				if ((*dict).size() == 0) {
 					TheMap.erase(Key);
@@ -55,60 +35,53 @@ bool ConfusableMatcher::RemoveMapping(char32_t Key, std::string Value)
 	return false;
 }
 
-bool ConfusableMatcher::AddMapping(char32_t Key, std::string Value, bool CheckValueDuplicate)
+bool ConfusableMatcher::AddMapping(char Key, std::string Value, bool CheckValueDuplicate)
 {
 	if (Value.length() == 1 && Key == Value[0])
 		return false;
-
-	auto v = Str32(Convert, Value);
 
 	auto dict = TheMap.find(Key);
 
 	if (dict == TheMap.end()) {
 		// Root doesn't exist
-		auto newDict = new dense_hash_map<char32_t, std::vector<Str32> *>;
+		auto newDict = new dense_hash_map<char, std::vector<std::string> *>;
 		newDict->set_empty_key(U'\x0');
 		newDict->set_deleted_key(U'\x1');
 		TheMap[Key] = newDict;
 
-		auto newArr = new std::vector<Str32>;
-		newArr->push_back(v);
-		(*newDict)[v.Str[0]] = newArr;
+		auto newArr = new std::vector<std::string>;
+		newArr->push_back(Value);
+		(*newDict)[Value[0]] = newArr;
 		return true;
 	} else {
-		auto foundArr = dict->second->find(v.Str[0]);
+		auto foundArr = dict->second->find(Value[0]);
 		if (foundArr != dict->second->end()) {
 			if (CheckValueDuplicate) {
 				for (auto it = foundArr->second->begin();it != foundArr->second->end(); ++it) {
-					if (it->Str == v.Str) {
+					if (*it == Value) {
 						return false;
 					}
 				}
 			}
 
-			foundArr->second->push_back(v);
+			foundArr->second->push_back(Value);
 			return true;
 		}
 
-		auto newArr = new std::vector<Str32>;
-		newArr->push_back(v);
-		(*dict->second)[v.Str[0]] = newArr;
+		auto newArr = new std::vector<std::string>;
+		newArr->push_back(Value);
+		(*dict->second)[Value[0]] = newArr;
 		return true;
 	}
 }
 
-ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char32_t, std::string>> InputMap, bool MakeAllUpper)
+ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap, bool MakeAllUpper)
 {
-#if _MSC_VER >= 1900
-	Convert = new std::wstring_convert<std::codecvt_utf8<int32_t>, int32_t>();
-#else
-	Convert = new std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>();
-#endif
 	TheMap.set_empty_key(U'\x0');
 	TheMap.set_deleted_key(U'\x1');
 
 	for (auto it = InputMap.begin();it != InputMap.end();++it) {
-		char32_t k;
+		char k;
 		std::string v;
 		std::tie(k, v) = *it;
 
@@ -116,7 +89,7 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char32_t, std::strin
 	}
 }
 
-std::vector<Str32> *ConfusableMatcher::GetValues(char32_t Key, char32_t ValFirstPart)
+std::vector<std::string> *ConfusableMatcher::GetValues(char Key, char ValFirstPart)
 {
 	auto dict = TheMap.find(Key);
 	if (dict == TheMap.end())
@@ -129,7 +102,7 @@ std::vector<Str32> *ConfusableMatcher::GetValues(char32_t Key, char32_t ValFirst
 	return foundArr->second;
 }
 
-int ConfusableMatcher::GetMatchedLengthSingleChar(std::u32string_view In, char32_t Match)
+int ConfusableMatcher::GetMatchedLengthSingleChar(std::string_view In, char Match)
 {
 	if (In[0] == Match)
 		return 1;
@@ -139,31 +112,28 @@ int ConfusableMatcher::GetMatchedLengthSingleChar(std::u32string_view In, char32
 		return -1;
 
 	for (auto it = vals->begin();it != vals->end();++it) {
-		if (it->Str.length() <= In.length() && it->Str == std::u32string_view(In.data(), it->Str.length())) {
-			return it->Str.length();
+		if (it->length() <= In.length() && *it == std::string_view(In.data(), it->length())) {
+			return it->length();
 		}
 	}
 
 	return -1;
 }
 	
-std::tuple<int, int> ConfusableMatcher::StringContains(std::string In_, std::string Contains_, std::unordered_set<char32_t> SkipChars, bool MatchRepeating, int StartIndex)
+std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::string Contains, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex)
 {
-	auto In = Str32(Convert, In_);
-	auto Contains = Str32(Convert, Contains_);
-
 	auto valIndex = StartIndex;
 	char32_t lastMatchedChar = U'\x0';
 
-	while (valIndex < In.Str.length()) {
+	while (valIndex < In.length()) {
 		auto sIndex = INT32_MAX;
 		auto matched = 0;
 
-		for (auto x = valIndex;x < In.Str.length();x++) {
-			matched = GetMatchedLengthSingleChar(std::u32string_view(In.Str.data() + x, In.Str.length() - x), Contains.Str[0]);
+		for (auto x = valIndex;x < In.length();x++) {
+			matched = GetMatchedLengthSingleChar(std::string_view(In.data() + x, In.length() - x), Contains[0]);
 			if (matched > 0) {
 				sIndex = x + matched;
-				lastMatchedChar = Contains.Str[0];
+				lastMatchedChar = Contains[0];
 				break;
 			}
 		}
@@ -181,7 +151,7 @@ std::tuple<int, int> ConfusableMatcher::StringContains(std::string In_, std::str
 
 			if (MatchRepeating) {
 				// Try to match repeating char
-				matched = GetMatchedLengthSingleChar(std::u32string_view(In.Str.data() + valIndex, In.Str.length() - valIndex), lastMatchedChar);
+				matched = GetMatchedLengthSingleChar(std::string_view(In.data() + valIndex, In.length() - valIndex), lastMatchedChar);
 				if (matched > 0)
 					methodPositive = true;
 			}
@@ -192,7 +162,7 @@ std::tuple<int, int> ConfusableMatcher::StringContains(std::string In_, std::str
 			}
 			// Try to skip chars
 			while (true) {
-				if (!SkipChars.contains(In.Str[valIndex]))
+				if (!SkipChars.contains(In[valIndex]))
 					break;
 				valIndex++;
 				methodPositive = true;
@@ -202,7 +172,7 @@ std::tuple<int, int> ConfusableMatcher::StringContains(std::string In_, std::str
 
 			if (matchedSameInARow > 0) {
 				auto inContains = 0;
-				while (Contains.Str[containsMatched + inContains - 1] == lastMatchedChar)
+				while (Contains[containsMatched + inContains - 1] == lastMatchedChar)
 					inContains++;
 				matchedSameInARow = std::min(matchedSameInARow, inContains - 1);
 				containsMatched += matchedSameInARow;
@@ -210,16 +180,16 @@ std::tuple<int, int> ConfusableMatcher::StringContains(std::string In_, std::str
 			}
 
 			// Try to match next char
-			matched = GetMatchedLengthSingleChar(std::u32string_view(In.Str.data() + valIndex, In.Str.length() - valIndex), Contains.Str[containsMatched]);
+			matched = GetMatchedLengthSingleChar(std::string_view(In.data() + valIndex, In.length() - valIndex), Contains[containsMatched]);
 			if (matched < 0) {
 				break;
 			} else {
-				lastMatchedChar = Contains.Str[containsMatched];
+				lastMatchedChar = Contains[containsMatched];
 			}
 			valIndex += matched;
 			containsMatched++;
 
-			if (containsMatched == Contains.Str.length())
+			if (containsMatched == Contains.length())
 				return std::make_tuple(indexMarker, valIndex - indexMarker);
 		}
 	}
@@ -241,7 +211,7 @@ ConfusableMatcher::~ConfusableMatcher()
 
 int main()
 {
-	std::vector<std::tuple<char32_t, std::string>> map;
+	std::vector<std::tuple<char, std::string>> map;
 
 	map.push_back(std::make_tuple('N', "/[()[]]/"));
 	map.push_back(std::make_tuple('N', "\U000000f1"));
@@ -272,11 +242,11 @@ int main()
 
 	auto matcher = ConfusableMatcher(map, true);
 
-	std::unordered_set<char32_t> ignore = { U'_', U'%', U'$' };
+	std::unordered_set<char> ignore = { '_', '%', '$' };
 
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	int res = 0;
-	for (auto x = 0;x < 500000;x++) {
+	for (auto x = 0;x < 5000000;x++) {
 		auto ret = matcher.StringContains(
 			"AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ",
 			"NIGGER",
@@ -290,7 +260,7 @@ int main()
 	std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-	std::cout << "result: " << res << " time " << duration << "ms, " << (duration / 500000) << "us per item" << std::endl;
+	std::cout << "result: " << res << " time " << duration << "ms, " << ((double)duration / 5000000) << "us per item" << std::endl;
 
 	/*map.push_back(std::make_tuple('A', "BO"));
 	map.push_back(std::make_tuple('A', "BI"));

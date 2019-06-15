@@ -7,7 +7,7 @@
 
 CMHandle InitConfusableMatcher(CMMap Map)
 {
-	std::vector<std::tuple<char32_t, std::string>> map;
+	std::vector<std::tuple<char, std::string>> map;
 
 	for (auto x = 0;x < Map.Size;x++) {
 		auto kv = Map.Kv[x];
@@ -23,7 +23,7 @@ void FreeConfusableMatcher(CMHandle In)
 	delete (ConfusableMatcher*)In;
 }
 
-CMListHandle ConstructIgnoreList(uint32_t *List, int Count)
+CMListHandle ConstructIgnoreList(char *List, int Count)
 {
 	auto ignore = new std::unordered_set<char32_t>;
 	for (auto x = 0;x < Count;x++) {
@@ -34,12 +34,12 @@ CMListHandle ConstructIgnoreList(uint32_t *List, int Count)
 
 void FreeIgnoreList(CMListHandle List)
 {
-	delete (std::unordered_set<char32_t>*)List;
+	delete (std::unordered_set<char>*)List;
 }
 
 uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList)
 {
-	auto ignore = (std::unordered_set<char32_t>*)IgnoreList;
+	auto ignore = (std::unordered_set<char>*)IgnoreList;
 
 	int ret[2];
 	std::tie(ret[0], ret[1]) = ((ConfusableMatcher *)CM)->StringContains(
@@ -52,12 +52,12 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 	return ret[0] | ((uint64_t)ret[1] << 32);
 }
 
-bool AddMapping(CMHandle CM, uint32_t Key, char *Value, bool CheckValueDuplicate)
+bool AddMapping(CMHandle CM, char Key, char *Value, bool CheckValueDuplicate)
 {
 	return ((ConfusableMatcher *)CM)->AddMapping(Key, Value, CheckValueDuplicate);
 }
 
-bool RemoveMapping(CMHandle CM, uint32_t Key, char *Value)
+bool RemoveMapping(CMHandle CM, char Key, char *Value)
 {
 	return ((ConfusableMatcher *)CM)->RemoveMapping(Key, Value);
 }
