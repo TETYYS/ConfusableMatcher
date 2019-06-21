@@ -1,13 +1,16 @@
 ﻿#include <iostream>
 #include <chrono>
 
+#include <sparsehash/dense_hash_map>
+using google::dense_hash_map;
 #include "ConfusableMatcher.h"
+
 
 bool ConfusableMatcher::RemoveMapping(char Key, std::string Value)
 {
 	dense_hash_map<char, std::vector<std::string> *> *dict;
 
-	if ((dict = TheMap[Key]) == nullptr)
+	if ((dict = (*TheMap)[Key]) == nullptr)
 		return false;
 
 	std::vector<std::string> *foundArr;
@@ -23,7 +26,7 @@ bool ConfusableMatcher::RemoveMapping(char Key, std::string Value)
 				(*dict).erase(Value[0]);
 				delete foundArr;
 				if ((*dict).size() == 0) {
-					TheMap.erase(Key);
+					TheMap->erase(Key);
 					delete dict;
 				}
 			}
@@ -37,17 +40,14 @@ bool ConfusableMatcher::RemoveMapping(char Key, std::string Value)
 
 bool ConfusableMatcher::AddMapping(char Key, std::string Value, bool CheckValueDuplicate)
 {
-	if (Value.length() == 1 && Key == Value[0])
-		return false;
+	auto dict = TheMap->find(Key);
 
-	auto dict = TheMap.find(Key);
-
-	if (dict == TheMap.end()) {
+	if (dict == TheMap->end()) {
 		// Root doesn't exist
 		auto newDict = new dense_hash_map<char, std::vector<std::string> *>;
 		newDict->set_empty_key(U'\x0');
 		newDict->set_deleted_key(U'\x1');
-		TheMap[Key] = newDict;
+		(*TheMap)[Key] = newDict;
 
 		auto newArr = new std::vector<std::string>;
 		newArr->push_back(Value);
@@ -77,8 +77,12 @@ bool ConfusableMatcher::AddMapping(char Key, std::string Value, bool CheckValueD
 
 ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap)
 {
-	TheMap.set_empty_key(U'\x0');
-	TheMap.set_deleted_key(U'\x1');
+	TheMap = new google::dense_hash_map<char, google::dense_hash_map<char, std::vector<std::string>*>*>();
+	TheMap->set_empty_key(U'\x0');
+	TheMap->set_deleted_key(U'\x1');
+
+	for (auto x = 'A';x <= 'Z';x++)
+		AddMapping((char)x, std::string(1, (char)x), true);
 
 	for (auto it = InputMap.begin();it != InputMap.end();++it) {
 		char k;
@@ -91,8 +95,8 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> 
 
 std::vector<std::string> *ConfusableMatcher::GetValues(char Key, char ValFirstPart)
 {
-	auto dict = TheMap.find(Key);
-	if (dict == TheMap.end())
+	auto dict = TheMap->find(Key);
+	if (dict == TheMap->end())
 		return nullptr;
 
 	auto foundArr = dict->second->find(ValFirstPart);
@@ -104,8 +108,6 @@ std::vector<std::string> *ConfusableMatcher::GetValues(char Key, char ValFirstPa
 
 int ConfusableMatcher::GetMatchedLengthSingleChar(std::string_view In, char Match)
 {
-	if (In[0] == Match)
-		return 1;
 	auto vals = GetValues(Match, In[0]);
 
 	if (vals == nullptr)
@@ -119,11 +121,11 @@ int ConfusableMatcher::GetMatchedLengthSingleChar(std::string_view In, char Matc
 
 	return -1;
 }
-	
-std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::string Contains, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex)
+
+std::tuple<int, int> ConfusableMatcher::StringContains(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int AddToIndex)
 {
-	auto valIndex = StartIndex;
-	char32_t lastMatchedChar = U'\x0';
+	auto valIndex = 0;
+	char lastMatchedChar = '\x0';
 
 	while (valIndex < In.length()) {
 		auto sIndex = INT32_MAX;
@@ -190,21 +192,27 @@ std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::stri
 			containsMatched++;
 
 			if (containsMatched == Contains.length())
-				return std::make_tuple(indexMarker, valIndex - indexMarker);
+				return std::make_tuple(indexMarker + AddToIndex, valIndex - indexMarker);
 		}
 	}
 	return std::make_tuple(-1, -1);
 }
 
+std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex)
+{
+	assert(In.length() <= StartIndex && StartIndex >= 0);
+	return StringContains(std::string_view(In.data() + StartIndex), std::string_view(Contains), Mode, SkipChars, MatchRepeating, StartIndex);
+}
+
 ConfusableMatcher::~ConfusableMatcher()
 {
-	if (TheMap.size() == 0)
+	if (TheMap->size() == 0)
 		return;
-	for (auto it = TheMap.begin();it != TheMap.end(); ++it) {
+	for (auto it = TheMap->begin();it != TheMap->end(); ++it) {
 		for (auto it2 = it->second->begin();it2 != it->second->end(); ++it2) {
 			delete it2->second;
 		}
 		delete it->second;
 	}
-	TheMap.clear();
+	TheMap->clear();
 }
