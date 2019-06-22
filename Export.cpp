@@ -42,12 +42,12 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 	auto ignore = (std::unordered_set<char>*)IgnoreList;
 
 	int ret[2];
-	std::tie(ret[0], ret[1]) = ((ConfusableMatcher *)CM)->StringContains(
+	/*std::tie(ret[0], ret[1]) = ((ConfusableMatcher *)CM)->StringContains(
 		In,
 		Contains,
 		*ignore,
 		MatchRepeating,
-		StartIndex);
+		StartIndex);*/
 
 	return ret[0] | ((uint64_t)ret[1] << 32);
 }

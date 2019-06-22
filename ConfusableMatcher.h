@@ -25,6 +25,24 @@ enum MATCHING_MODE
 	SHORTEST
 };
 
+struct MatchingState
+{
+	std::string_view In;
+	std::string_view Contains;
+	int StartingIndex;
+	int MatchedChars;
+	char LastMatchedChar;
+
+	MatchingState(std::string_view In, std::string_view Contains, int StartingIndex, int MatchedChars, char LastMatchedChar)
+	{
+		this->In = In;
+		this->Contains = Contains;
+		this->StartingIndex = StartingIndex;
+		this->MatchedChars = MatchedChars;
+		this->LastMatchedChar = LastMatchedChar;
+	}
+};
+
 class ConfusableMatcher
 {
 	private:
@@ -35,10 +53,9 @@ class ConfusableMatcher
 	std::vector<int>
 		GetMatchedLengthsSingleChar(std::string_view In, char Match);
 	std::tuple<int, int>
-		StringContains(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int AddToIndex);
+		StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex);
 	std::tuple<int, int>
-		StringContainsInner(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating);
-
+		StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating);
 
 	public:
 	ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap);
