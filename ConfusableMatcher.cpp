@@ -206,7 +206,7 @@ void ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value
 	return;
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating)
+std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::unordered_set<std::string> Skip, bool MatchRepeating)
 {
 	std::stack<MatchingState> MatchingStack;
 	StackVector<std::pair<std::string, std::string>> MappingsStorage;
@@ -311,7 +311,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHIN
 	}
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
+std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std::string_view Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	StackVector<std::pair<std::string, std::string>> MappingsStorage;
 
@@ -331,7 +331,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 					x,
 					MappingsStorage.Stack[i].second.length(),
 					std::string_view(Contains.data(), MappingsStorage.Stack[i].first.length())
-				), Mode, Skip, MatchRepeating);
+				), Skip, MatchRepeating);
 
 				if (contains.first == -1)
 					continue;
@@ -349,7 +349,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 					x,
 					it->second.length(),
 					std::string_view(Contains.data(), it->first.length())
-				), Mode, Skip, MatchRepeating);
+				), Skip, MatchRepeating);
 
 				if (contains.first == -1)
 					continue;
@@ -361,10 +361,10 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 	return std::pair(-1, -1);
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
+std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	assert(StartIndex <= In.length() && StartIndex >= 0);
-	return IndexOfFromView(std::string_view(In), std::string_view(Contains), Mode, Skip, MatchRepeating, StartIndex);
+	return IndexOfFromView(std::string_view(In), std::string_view(Contains), Skip, MatchRepeating, StartIndex);
 }
 
 ConfusableMatcher::~ConfusableMatcher()

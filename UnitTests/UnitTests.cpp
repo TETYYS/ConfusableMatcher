@@ -17,7 +17,7 @@ void Test1()
 	map.push_back(std::pair("E", "T"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("TEST", "NICE", RECURSIVE, { }, false, 0);
+	auto res = matcher.IndexOf("TEST", "NICE", { }, false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 4);
 }
@@ -30,19 +30,19 @@ void Test2()
 	map.push_back(std::pair("V", "VO"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("VV", "VAVOVAVO", RECURSIVE, { }, false, 0);
+	auto res = matcher.IndexOf("VV", "VAVOVAVO", { }, false, 0);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
-	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 0);
+	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 4);
+	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 4);
 	ASSERT_EQUAL(res.first, 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 2);
+	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 2);
 	ASSERT_EQUAL(res.first, 2);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 3);
+	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 3);
 	ASSERT_EQUAL(res.first, 4);
 	ASSERT(res.second == 3 || res.second == 4);
 }
@@ -55,7 +55,7 @@ void Test3()
 	map.push_back(std::pair("B", "\xFA\xFF"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("\x02\x03\xFA\xFF", "AB", RECURSIVE, { }, false, 0);
+	auto res = matcher.IndexOf("\x02\x03\xFA\xFF", "AB", { }, false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 4);
 }
@@ -68,7 +68,7 @@ void Test4()
 	map.push_back(std::pair("D", "[)"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", RECURSIVE, { "_", " " }, true, 0);
+	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", { "_", " " }, true, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 11);
 }
@@ -82,7 +82,7 @@ void Test5()
 	map.push_back(std::pair("I", "/"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("/\\/CE", "NICE", RECURSIVE, { }, false, 0);
+	auto res = matcher.IndexOf("/\\/CE", "NICE", { }, false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 5);
 }
@@ -96,13 +96,13 @@ void Test6()
 	map.push_back(std::pair("I", "/"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("I/\\/AM", "INAN", RECURSIVE, { }, true, 0);
+	auto res = matcher.IndexOf("I/\\/AM", "INAN", { }, true, 0);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
-	res = matcher.IndexOf("I/\\/AM", "INAM", RECURSIVE, { }, true, 0);
+	res = matcher.IndexOf("I/\\/AM", "INAM", { }, true, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
-	res = matcher.IndexOf("I/\\/AM", "IIVAM", RECURSIVE, { }, true, 0);
+	res = matcher.IndexOf("I/\\/AM", "IIVAM", { }, true, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
 }
@@ -141,7 +141,7 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 	return map;
 }
 
-void Test7()
+/*void Test7()
 {
 	auto map = GetDefaultMap();
 
@@ -179,20 +179,20 @@ void Test7()
 	std::ostringstream outp2;
 	outp2 << "Elapsed: " << seconds.count() << "s, iinc: " << iinc << std::endl;
 	OutputDebugStringA(outp2.str().data());
-}
+}*/
 
-/*void Test7()
+void Test7()
 {
 	auto map = GetDefaultMap();
 
 	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
+	auto res = matcher.IndexOf(in, "NIGGER", { "_", "%", "$" }, true, 0);
 
 	ASSERT(
 		(res.first == 64 && res.second == 57) ||
 		(res.first == 89 && res.second == 32));
-}*/
+}
 
 void LidlNormalizerTests()
 {
@@ -208,11 +208,11 @@ void LidlNormalizerTests()
 		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
 		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
 		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-		"U", "A", " ", "S", "M", "O", "L", "N", "A", "T", "I", "O", "N", "N", "I", "G", "N", "I"
+		"U", "A", " ", "S", "M", "O", "L", "N", "A", "T", "I", "O", "N", "N", "I", "G", "N", "I", "FREE", "AE"
 	};
 	std::vector<std::string> vals = {
 		"\U00000105", "\U0000ab31", "\U00001d43", "\U000000e5", "\U0000249d", "\U000000fc", "\U000000dc", "\U000000f6", "\U000000d6", "\U000000e4", "\U000000c4",
-		"\U0000249c", "\U0000249e", "\U0000249f", "\U000024a0", "\U000024a1", "\U000024a2", "\U000024a3", "\U000024a4", "\U000024a5", "\U000024a6", "\U000024a7", "\U000024a8", "\U000024a9", "\U000024aa", "\U000024ab", "\U000024ac", "\U000024ad", "\U000024ae", "\U000024af", "\U000024b0", "\U000024b1", "\U000024b2", "\U000024b3", "\U000024b4", "\U000024cf", "\U000024d0", "\U000024d1", "\U000024d2", "\U000024d3", "\U000024d4", "\U000024d5", "\U000024d6", "\U000024d7", "\U000024d8", "\U000024d9", "\U000024da", "\U000024db", "\U000024dc", "\U000024dd", "\U000024de", "\U000024df", "\U000024e0", "\U000024e1", "\U000024e2", "\U000024e3", "\U000024e4", "\U000024e5", "\U000024e6", "\U000024e7", "\U000024e8", "\U000024e9", "\U000024ea", "\U0001d552", "\U0001d553", "\U0001d554", "\U0001d555", "\U0001d556", "\U0001d557", "\U0001d558", "\U0001d559", "\U0001d55a", "\U0001d55b", "\U0001d55c", "\U0001d55d", "\U0001d55e", "\U0001d55f", "\U0001d560", "\U0001d561", "\U0001d562", "\U0001d563", "\U0001d564", "\U0001d565", "\U0001d566", "\U0001d567", "\U0001d568", "\U0001d569", "\U0001d56a", "\U0001d56b", "\U0001f130", "\U0001f131", "\U0001f132", "\U0001f133", "\U0001f134", "\U0001f135", "\U0001f136", "\U0001f137", "\U0001f138", "\U0001f139", "\U0001f13a", "\U0001f13b", "\U0001f13c", "\U0001f13d", "\U0001f13e", "\U0001f13f", "\U0001f140", "\U0001f141", "\U0001f142", "\U0001f143", "\U0001f144", "\U0001f145", "\U0001f146", "\U0001f147", "\U0001f148", "\U0001f149", "\U000020b3", "\U00000e3f", "\U000020b5", "\U00000110", "\U00000246", "\U000020a3", "\U000020b2", "\U00002c67", "\U00000142", "\U0000004a", "\U000020ad", "\U00002c60", "\U000020a5", "\U000020a6", "\U000000d8", "\U000020b1", "\U00000051", "\U00002c64", "\U000020b4", "\U000020ae", "\U00000244", "\U00000056", "\U000020a9", "\U000004fe", "\U0000024e", "\U00002c6b", "\U0001d586", "\U0001d587", "\U0001d588", "\U0001d589", "\U0001d58a", "\U0001d58b", "\U0001d58c", "\U0001d58d", "\U0001d58e", "\U0001d58f", "\U0001d590", "\U0001d591", "\U0001d592", "\U0001d593", "\U0001d594", "\U0001d595", "\U0001d596", "\U0001d597", "\U0001d598", "\U0001d599", "\U0001d59a", "\U0001d59b", "\U0001d59c", "\U0001d59d", "\U0001d59e", "\U0001d59f", "\U0001f170", "\U0001f171", "\U0001f172", "\U0001f173", "\U0001f174", "\U0001f175", "\U0001f176", "\U0001f177", "\U0001f178", "\U0001f179", "\U0001f17a", "\U0001f17b", "\U0001f17c", "\U0001f17d", "\U0001f17e", "\U0001f17f", "\U0001f180", "\U0001f181", "\U0001f182", "\U0001f183", "\U0001f184", "\U0001f185", "\U0001f186", "\U0001f187", "\U0001f188", "\U0001f189", "\U0001f1fa", "\U0001f1e6", " ", "\U000002e2", "\U00001d50", "\U00001d52", "\U000002e1", "\U0000207f", "\U00001d43", "\U00001d57", "\U00001da6", "\U00001d52", "\U0000207f", "\U0000041d", "\U00000438", "\U00000433", "\U0001F1F3", "\U0001F1EE"
+		"\U0000249c", "\U0000249e", "\U0000249f", "\U000024a0", "\U000024a1", "\U000024a2", "\U000024a3", "\U000024a4", "\U000024a5", "\U000024a6", "\U000024a7", "\U000024a8", "\U000024a9", "\U000024aa", "\U000024ab", "\U000024ac", "\U000024ad", "\U000024ae", "\U000024af", "\U000024b0", "\U000024b1", "\U000024b2", "\U000024b3", "\U000024b4", "\U000024cf", "\U000024d0", "\U000024d1", "\U000024d2", "\U000024d3", "\U000024d4", "\U000024d5", "\U000024d6", "\U000024d7", "\U000024d8", "\U000024d9", "\U000024da", "\U000024db", "\U000024dc", "\U000024dd", "\U000024de", "\U000024df", "\U000024e0", "\U000024e1", "\U000024e2", "\U000024e3", "\U000024e4", "\U000024e5", "\U000024e6", "\U000024e7", "\U000024e8", "\U000024e9", "\U000024ea", "\U0001d552", "\U0001d553", "\U0001d554", "\U0001d555", "\U0001d556", "\U0001d557", "\U0001d558", "\U0001d559", "\U0001d55a", "\U0001d55b", "\U0001d55c", "\U0001d55d", "\U0001d55e", "\U0001d55f", "\U0001d560", "\U0001d561", "\U0001d562", "\U0001d563", "\U0001d564", "\U0001d565", "\U0001d566", "\U0001d567", "\U0001d568", "\U0001d569", "\U0001d56a", "\U0001d56b", "\U0001f130", "\U0001f131", "\U0001f132", "\U0001f133", "\U0001f134", "\U0001f135", "\U0001f136", "\U0001f137", "\U0001f138", "\U0001f139", "\U0001f13a", "\U0001f13b", "\U0001f13c", "\U0001f13d", "\U0001f13e", "\U0001f13f", "\U0001f140", "\U0001f141", "\U0001f142", "\U0001f143", "\U0001f144", "\U0001f145", "\U0001f146", "\U0001f147", "\U0001f148", "\U0001f149", "\U000020b3", "\U00000e3f", "\U000020b5", "\U00000110", "\U00000246", "\U000020a3", "\U000020b2", "\U00002c67", "\U00000142", "\U0000004a", "\U000020ad", "\U00002c60", "\U000020a5", "\U000020a6", "\U000000d8", "\U000020b1", "\U00000051", "\U00002c64", "\U000020b4", "\U000020ae", "\U00000244", "\U00000056", "\U000020a9", "\U000004fe", "\U0000024e", "\U00002c6b", "\U0001d586", "\U0001d587", "\U0001d588", "\U0001d589", "\U0001d58a", "\U0001d58b", "\U0001d58c", "\U0001d58d", "\U0001d58e", "\U0001d58f", "\U0001d590", "\U0001d591", "\U0001d592", "\U0001d593", "\U0001d594", "\U0001d595", "\U0001d596", "\U0001d597", "\U0001d598", "\U0001d599", "\U0001d59a", "\U0001d59b", "\U0001d59c", "\U0001d59d", "\U0001d59e", "\U0001d59f", "\U0001f170", "\U0001f171", "\U0001f172", "\U0001f173", "\U0001f174", "\U0001f175", "\U0001f176", "\U0001f177", "\U0001f178", "\U0001f179", "\U0001f17a", "\U0001f17b", "\U0001f17c", "\U0001f17d", "\U0001f17e", "\U0001f17f", "\U0001f180", "\U0001f181", "\U0001f182", "\U0001f183", "\U0001f184", "\U0001f185", "\U0001f186", "\U0001f187", "\U0001f188", "\U0001f189", "\U0001f1fa", "\U0001f1e6", " ", "\U000002e2", "\U00001d50", "\U00001d52", "\U000002e1", "\U0000207f", "\U00001d43", "\U00001d57", "\U00001da6", "\U00001d52", "\U0000207f", "\U0000041d", "\U00000438", "\U00000433", "\U0001F1F3", "\U0001F1EE", "\U0001f193", "\U00001d2d"
 	};
 	
 	for (auto x = 0;x < keys.size();x++)
@@ -228,12 +228,12 @@ void LidlNormalizerTests()
 		std::make_tuple(std::vector({ "\U000002e2\U00001d50\U00001d52\U000002e1 \U0000207f\U00001d43\U00001d57\U00001da6\U00001d52\U0000207f", "SMOL NATION" }), std::vector({ 0, 29 })),
 		std::make_tuple(std::vector({ "\U0000041d\U00000438\U00000433", "NIG" }), std::vector({ 0, 6 })),
 		std::make_tuple(std::vector({ "\U0001f1fa\U0001f1e6XD", "UAXD" }), std::vector({ 0, 10 })),
-		//std::make_tuple(std::vector({ "🆓 ICE", "FREE ICE" }), std::vector({ 0, 5 })),
+		std::make_tuple(std::vector({ "\U0001f193 ICE", "FREE ICE" }), std::vector({ 0, 8 })),
 		std::make_tuple(std::vector({ "chocolate \U0001F1F3\U0001F1EEb", "CHOCOLATE NIB" }), std::vector({ 0, 19 })),
 		std::make_tuple(std::vector({ "\U0001f171lueberry", "BLUEBERRY" }), std::vector({ 0, 12 })),
 		std::make_tuple(std::vector({ "\U0000249d", "B" }), std::vector({ 0, 3 })),
 		std::make_tuple(std::vector({ "\U000000fc \U000000dc \U000000f6 \U000000d6 \U000000e4 \U000000c4", "U U O O A A" }), std::vector({ 0, 17 })),
-		//std::make_tuple(std::vector({ "ᴭ", "AE" }), std::vector({ 0, 1 })),
+		std::make_tuple(std::vector({ "\U00001d2d", "AE" }), std::vector({ 0, 3 })),
 		std::make_tuple(std::vector({ "\U0000249c \U0000249d \U0000249e \U0000249f \U000024a0 \U000024a1 \U000024a2 \U000024a3 \U000024a4 \U000024a5 \U000024a6 \U000024a7 \U000024a8 \U000024a9 \U000024aa \U000024ab \U000024ac \U000024ad \U000024ae \U000024af \U000024b0 \U000024b1 \U000024b2 \U000024b3 \U000024b4", "A B C D E F G H I J K L M N O P Q R S T U V W X Y" }), std::vector({ 0, 99 })),
 		std::make_tuple(std::vector({ "\U000024cf\U000024d0\U000024d1\U000024d2\U000024d3\U000024d4\U000024d5\U000024d6\U000024d7\U000024d8\U000024d9\U000024da\U000024db\U000024dc\U000024dd\U000024de\U000024df\U000024e0\U000024e1\U000024e2\U000024e3\U000024e4\U000024e5\U000024e6\U000024e7\U000024e8\U000024e9\U000024ea", "ZABCDEFGHIJKLMNOPQRSTUVWXYZ0" }), std::vector({ 0, 84 })),
 		std::make_tuple(std::vector({ "\U0001d552\U0001d553\U0001d554\U0001d555\U0001d556\U0001d557\U0001d558\U0001d559\U0001d55a\U0001d55b\U0001d55c\U0001d55d\U0001d55e\U0001d55f\U0001d560\U0001d561\U0001d562\U0001d563\U0001d564\U0001d565\U0001d566\U0001d567\U0001d568\U0001d569\U0001d56a\U0001d56b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 104 })),
@@ -247,7 +247,7 @@ void LidlNormalizerTests()
 		std::vector<const char*> chr;
 		std::vector<int> eq;
 		std::tie(chr, eq) = entry;
-		auto res = matcher.IndexOf(chr[0], chr[1], RECURSIVE, { }, true, 0);
+		auto res = matcher.IndexOf(chr[0], chr[1], { }, true, 0);
 		ASSERT_EQUAL(res.first, eq[0]);
 		ASSERT_EQUAL(res.second, eq[1]);
 	}
@@ -261,12 +261,50 @@ void Test8()
 	auto res = matcher.IndexOf(
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890",
-		RECURSIVE,
 		{ "\U00000332", "\U00000305", "[", "]" },
 		false,
 		0);
 	ASSERT_EQUAL(res.first, 5);
 	ASSERT_EQUAL(res.second, 397);
+}
+
+void Test9()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	map.push_back(std::pair(" ", " "));
+
+	auto matcher = ConfusableMatcher(map);
+	auto res = matcher.IndexOf(
+		"NOT NICE",
+		"VERY NICE",
+		{  },
+		false,
+		0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+
+	matcher.AddMapping("VERY", "NOT", false);
+
+	res = matcher.IndexOf(
+		"NOT NICE",
+		"VERY NICE",
+		{ },
+		false,
+		0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 8);
+
+	matcher.RemoveMapping("VERY", "NOT");
+
+	res = matcher.IndexOf(
+		"NOT NICE",
+		"VERY NICE",
+		{ },
+		false,
+		0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
 }
 
 int main()
@@ -281,6 +319,7 @@ int main()
 	s.push_back(CUTE(Test7));
 	s.push_back(CUTE(LidlNormalizerTests));
 	s.push_back(CUTE(Test8));
+	s.push_back(CUTE(Test9));
 	cute::ide_listener lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

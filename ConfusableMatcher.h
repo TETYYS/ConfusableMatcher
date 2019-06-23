@@ -119,9 +119,9 @@ class ConfusableMatcher
 	void
 		GetMappings(std::string_view Key, std::string_view Value, StackVector<std::pair<std::string, std::string>> &Storage);
 	std::pair<int, int>
-		IndexOfFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
+		IndexOfFromView(std::string_view In, std::string_view Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
 	std::pair<int, int>
-		IndexOfInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating);
+		IndexOfInner(MatchingState State, std::unordered_set<std::string> Skip, bool MatchRepeating);
 
 	public:
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap);
@@ -130,7 +130,7 @@ class ConfusableMatcher
 	bool
 		RemoveMapping(std::string Key, std::string Value);
 	std::pair<int, int>
-		IndexOf(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex = 0);
+		IndexOf(std::string In, std::string Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex = 0);
 
 	~ConfusableMatcher();
 };
