@@ -179,16 +179,16 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 		AddMapping(it->first, it->second, true);
 }
 
-std::vector<std::pair<std::string, std::string>> ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value)
+void ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value, StackVector<std::pair<std::string, std::string>> &Storage)
 {
 	assert(Key.length() >= 1);
 	assert(Value.length() >= 1);
 
-	std::vector<std::pair<std::string, std::string>> ret;
+	Storage.Reset();
 
 	auto keyArr = TheMap->find(Key[0]);
 	if (keyArr == TheMap->end())
-		return ret;
+		return;
 
 	for (auto it = keyArr->second->begin();it != keyArr->second->end();++it) {
 		if ((*it)->first.length() <= Key.length() && (*it)->first == std::string_view(Key.data(), (*it)->first.length())) {
@@ -198,38 +198,18 @@ std::vector<std::pair<std::string, std::string>> ConfusableMatcher::GetMappings(
 
 			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();++it2) {
 				if (it2->length() <= Value.length() && *it2 == std::string_view(Value.data(), it2->length()))
-					ret.push_back(std::pair((*it)->first, *it2));
+					Storage.Push(std::pair((*it)->first, *it2));
 			}
 		}
 	}
 
-	return ret;
+	return;
 }
-
-/*std::vector<std::pair<int, int>> ConfusableMatcher::GetMatchedLengths(std::string_view In, std::string_view Contains)
-{
-	auto vals = GetMappings(In, Contains);
-	std::vector<std::pair<int, int>> ret;
-
-	if (vals.size() == 0)
-		return ret;
-
-	for (auto it = vals.begin();it != vals.end();++it) {
-		ret.push_back()
-		if (it->length() <= In.length() && *it == std::string_view(In.data(), it->length())) {
-			ret.push_back(it->length());
-		}
-	}
-
-	if (ret.size() == 0)
-		ret.push_back(-1);
-
-	return ret;
-}*/
 
 std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating)
 {
 	std::stack<MatchingState> MatchingStack;
+	StackVector<std::pair<std::string, std::string>> MappingsStorage;
 
 	if (State.In.length() == 0)
 		return std::pair(-1, -1);
@@ -241,17 +221,29 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHIN
 	while (true) {
 		if (MatchRepeating) {
 			// Try to match repeating substring
-			auto matchedRepeating = GetMappings(State.LastMatched, State.In);
-			if (matchedRepeating.size() != 0) {
+			GetMappings(State.LastMatched, State.In, MappingsStorage);
+			if (MappingsStorage.Size() != 0) {
 				// Push every new matching path
-				for (auto it = matchedRepeating.begin();it != matchedRepeating.end();++it) {
-					MatchingStack.push(MatchingState(
-						std::string_view(State.In.data() + it->second.length()),
-						State.Contains,
-						State.StartingIndex,
-						State.MatchedChars + it->second.length(),
-						State.LastMatched
-					));
+				if (MappingsStorage.IsStack) {
+					for (auto x = 0;x < MappingsStorage.CurSize;x++) {
+						MatchingStack.push(MatchingState(
+							std::string_view(State.In.data() + MappingsStorage.Stack[x].second.length()),
+							State.Contains,
+							State.StartingIndex,
+							State.MatchedChars + MappingsStorage.Stack[x].second.length(),
+							State.LastMatched
+						));
+					}
+				} else {
+					for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();++it) {
+						MatchingStack.push(MatchingState(
+							std::string_view(State.In.data() + it->second.length()),
+							State.Contains,
+							State.StartingIndex,
+							State.MatchedChars + it->second.length(),
+							State.LastMatched
+						));
+					}
 				}
 			}
 		}
@@ -281,19 +273,34 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHIN
 		}
 
 		// Try to match next char - main technique
-		auto matchedNext = GetMappings(State.Contains, State.In);
-		if (matchedNext.size() != 0) {
-			for (auto it = matchedNext.begin();it != matchedNext.end();++it) {
-				if (it->first.length() == State.Contains.length())
-					return std::pair(State.StartingIndex, State.MatchedChars + it->second.length());
+		GetMappings(State.Contains, State.In, MappingsStorage);
+		if (MappingsStorage.Size() != 0) {
+			if (MappingsStorage.IsStack) {
+				for (auto x = 0;x < MappingsStorage.CurSize;x++) {
+					if (MappingsStorage.Stack[x].first.length() == State.Contains.length())
+						return std::pair(State.StartingIndex, State.MatchedChars + MappingsStorage.Stack[x].second.length());
 
-				MatchingStack.push(MatchingState(
-					std::string_view(State.In.data() + it->second.length()),
-					std::string_view(State.Contains.data() + it->first.length()),
-					State.StartingIndex,
-					State.MatchedChars + it->second.length(),
-					std::string_view(State.Contains.data(), it->first.length())
-				));
+					MatchingStack.push(MatchingState(
+						std::string_view(State.In.data() + MappingsStorage.Stack[x].second.length()),
+						std::string_view(State.Contains.data() + MappingsStorage.Stack[x].first.length()),
+						State.StartingIndex,
+						State.MatchedChars + MappingsStorage.Stack[x].second.length(),
+						std::string_view(State.Contains.data(), MappingsStorage.Stack[x].first.length())
+					));
+				}
+			} else {
+				for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();++it) {
+					if (it->first.length() == State.Contains.length())
+						return std::pair(State.StartingIndex, State.MatchedChars + it->second.length());
+
+					MatchingStack.push(MatchingState(
+						std::string_view(State.In.data() + it->second.length()),
+						std::string_view(State.Contains.data() + it->first.length()),
+						State.StartingIndex,
+						State.MatchedChars + it->second.length(),
+						std::string_view(State.Contains.data(), it->first.length())
+					));
+				}
 			}
 		} else {
 			if (MatchingStack.empty())
@@ -306,27 +313,49 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHIN
 
 std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
+	StackVector<std::pair<std::string, std::string>> MappingsStorage;
+
 	for (auto x = StartIndex;x < In.length();x++) {
-		auto matched = GetMappings(Contains, std::string_view(In.data() + x));
-		if (matched.size() == 0)
+		GetMappings(Contains, std::string_view(In.data() + x), MappingsStorage);
+		if (MappingsStorage.Size() == 0)
 			continue;
 
-		for (auto it = matched.begin();it != matched.end();++it) {
-			if (it->first.length() == Contains.length())
-				return std::pair(x, it->second.length());
+		if (MappingsStorage.IsStack) {
+			for (auto i = 0;i < MappingsStorage.CurSize;i++) {
+				if (MappingsStorage.Stack[i].first.length() == Contains.length())
+					return std::pair(x, MappingsStorage.Stack[i].second.length());
 
-			auto contains = IndexOfInner(MatchingState(
-				std::string_view(In.data() + x + it->second.length()),
-				std::string_view(Contains.data() + it->first.length()),
-				x,
-				it->second.length(),
-				std::string_view(Contains.data(), it->first.length())
-			), Mode, Skip, MatchRepeating);
+				auto contains = IndexOfInner(MatchingState(
+					std::string_view(In.data() + x + MappingsStorage.Stack[i].second.length()),
+					std::string_view(Contains.data() + MappingsStorage.Stack[i].first.length()),
+					x,
+					MappingsStorage.Stack[i].second.length(),
+					std::string_view(Contains.data(), MappingsStorage.Stack[i].first.length())
+				), Mode, Skip, MatchRepeating);
 
-			if (contains.first == -1)
-				continue;
+				if (contains.first == -1)
+					continue;
 
-			return contains;
+				return contains;
+			}
+		} else {
+			for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();++it) {
+				if (it->first.length() == Contains.length())
+					return std::pair(x, it->second.length());
+
+				auto contains = IndexOfInner(MatchingState(
+					std::string_view(In.data() + x + it->second.length()),
+					std::string_view(Contains.data() + it->first.length()),
+					x,
+					it->second.length(),
+					std::string_view(Contains.data(), it->first.length())
+				), Mode, Skip, MatchRepeating);
+
+				if (contains.first == -1)
+					continue;
+
+				return contains;
+			}
 		}
 	}
 	return std::pair(-1, -1);

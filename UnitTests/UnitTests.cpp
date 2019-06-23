@@ -141,7 +141,7 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 	return map;
 }
 
-/*void Test7()
+void Test7()
 {
 	auto map = GetDefaultMap();
 
@@ -150,24 +150,38 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 	int iinc = 0;
 	auto start = std::chrono::high_resolution_clock::now();
 	std::pair<int, int> res;
-	for (auto x = 0;x < 50000;x++) {
+	for (auto x = 0;x < 500000;x++) {
 		res = matcher.IndexOf(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
 		iinc += res.first;
 	}
 	auto finish = std::chrono::high_resolution_clock::now();
 
-	std::chrono::duration<double> seconds = (finish - start) / 50000;
+	std::chrono::duration<double> seconds = (finish - start) / 500000;
 
 	std::ostringstream outp;
-	outp << "Elapsed: " << seconds.count() << "s, iinc: " << iinc;
+	outp << "Elapsed: " << seconds.count() << "s, iinc: " << iinc << std::endl;
 	OutputDebugStringA(outp.str().data());
 
 	ASSERT(
 		(res.first == 64 && res.second == 57) ||
 		(res.first == 89 && res.second == 32));
-}*/
 
-void Test7()
+	start = std::chrono::high_resolution_clock::now();
+	in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__NIGGER𝘪G___%____$__G__𝓰𝘦Ѓ";
+	for (auto x = 0;x < 500000;x++) {
+		auto res = in.find("NIGGER");
+		iinc += res;
+	}
+	finish = std::chrono::high_resolution_clock::now();
+
+	seconds = (finish - start) / 500000;
+
+	std::ostringstream outp2;
+	outp2 << "Elapsed: " << seconds.count() << "s, iinc: " << iinc << std::endl;
+	OutputDebugStringA(outp2.str().data());
+}
+
+/*void Test7()
 {
 	auto map = GetDefaultMap();
 
@@ -178,7 +192,7 @@ void Test7()
 	ASSERT(
 		(res.first == 64 && res.second == 57) ||
 		(res.first == 89 && res.second == 32));
-}
+}*/
 
 void LidlNormalizerTests()
 {
@@ -234,9 +248,6 @@ void LidlNormalizerTests()
 		std::vector<int> eq;
 		std::tie(chr, eq) = entry;
 		auto res = matcher.IndexOf(chr[0], chr[1], RECURSIVE, { }, true, 0);
-		if (res.second != eq[1]) {
-			ASSERT_EQUAL(1, 1);
-		}
 		ASSERT_EQUAL(res.first, eq[0]);
 		ASSERT_EQUAL(res.second, eq[1]);
 	}

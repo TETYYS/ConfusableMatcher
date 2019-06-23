@@ -3,6 +3,7 @@
 #include <codecvt>
 #include <string_view>
 #include <unordered_set>
+#include <iterator>
 
 namespace google
 {
@@ -43,6 +44,62 @@ struct MatchingState
 	}
 };
 
+constexpr int STACKVECTOR_SIZE = 16;
+template<class T>
+struct StackVector
+{
+	int CurSize;
+	bool IsStack = true;
+
+public:
+	T Stack[STACKVECTOR_SIZE];
+	std::vector<T> Heap;
+
+	void Push(T In)
+	{
+		if (IsStack) {
+			if (CurSize + 1 > STACKVECTOR_SIZE) {
+				IsStack = false;
+				Heap = std::vector<T>(&Stack[0], &Stack[STACKVECTOR_SIZE - 1]);
+				CurSize = 0;
+			} else {
+				Stack[CurSize++] = In;
+				return;
+			}
+		}
+		Heap.push_back(In);
+	}
+
+	void Reset()
+	{
+		if (IsStack)
+			CurSize = 0;
+		else
+			Heap.clear();
+	}
+
+	size_t Size()
+	{
+		return IsStack ? CurSize : Heap.size();
+	}
+
+	auto begin()
+	{
+		if (IsStack)
+			return &Stack[0];
+		else
+			return Heap.begin();
+	}
+
+	auto end()
+	{
+		if (IsStack)
+			return &Stack[CurSize];
+		else
+			return Heap.end();
+	}
+};
+
 class ConfusableMatcher
 {
 	private:
@@ -59,10 +116,8 @@ class ConfusableMatcher
 		>*
 	>
 		*TheMap;
-	std::vector<std::pair<std::string, std::string>>
-		GetMappings(std::string_view Key, std::string_view Value);
-	/*std::vector<std::pair<int, int>>
-		GetMatchedLengths(std::string_view In, std::string_view Contains);*/
+	void
+		GetMappings(std::string_view Key, std::string_view Value, StackVector<std::pair<std::string, std::string>> &Storage);
 	std::pair<int, int>
 		IndexOfFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
 	std::pair<int, int>
