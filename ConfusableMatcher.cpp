@@ -31,7 +31,8 @@ bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 		std::vector<std::string>* // Values whole
 	> *valDict = nullptr;
 	
-	for (auto it = keyArr->begin();it != keyArr->end();++it) {
+	// Search for whole matching key
+	for (auto it = keyArr->begin();it != keyArr->end();it++) {
 		if ((*it)->first == Key) {
 			valDict = (*it)->second;
 			break;
@@ -41,37 +42,52 @@ bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 	if (valDict == nullptr)
 		return false;
 
+	// Find values
 	std::vector<std::string> *valArr;
 	auto findValArr = valDict->find(Value[0]);
 	if (findValArr == valDict->end())
 		return false;
 	valArr = findValArr->second;
 	
-	for (auto it = valArr->begin();it != valArr->end(); ++it) {
-		if (*it != Value)
+	for (auto it = valArr->begin();it != valArr->end();) {
+		if (*it != Value) {
+			// Search for whole matching value
+			it++;
 			continue;
+		}
 
-		valArr->erase(it);
+		it = valArr->erase(it);
 
 		if (valArr->size() != 0)
 			return true;
 
+		// Free value array if it's empty
 		valDict->erase(Value[0]);
 		delete valArr;
 
 		if (valDict->size() != 0)
 			return true;
 
-		for (auto it2 = keyArr->begin();it2 != keyArr->end();++it2) {
+		// Free value chars dictionary if it's empty
+		delete valDict;
+
+		bool erased = false;
+		for (auto it2 = keyArr->begin();it2 != keyArr->end();) {
 			if ((*it2)->first == Key) {
-				keyArr->erase(it2);
-				delete *it2;
-			}
+				auto oldPair = *it2;
+				it2 = keyArr->erase(it2);
+				delete oldPair; // Free the pair that was holding value chars dictionary too
+				erased = true;
+			} else
+				it2++;
 		}
-			
+
+		assert(erased);
+		
 		if (keyArr->size() != 0)
 			return true;
 
+		// Free key array if it's empty
 		TheMap->erase(Key[0]);
 		delete keyArr;
 
@@ -114,7 +130,7 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 		std::vector<std::string>* // Values whole
 	> *valDict = nullptr;
 
-	for (auto it = keyArr->begin();it != keyArr->end();++it) {
+	for (auto it = keyArr->begin();it != keyArr->end();it++) {
 		if ((*it)->first == Key) {
 			valDict = (*it)->second;
 			break;
@@ -122,6 +138,7 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 	}
 
 	if (valDict == nullptr) {
+		// Value dictionary doesn't exist
 		valDict = new google::dense_hash_map<
 			char, // Value first char
 			std::vector<std::string> * // Values whole
@@ -134,13 +151,14 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 	std::vector<std::string> *valArr;
 	auto findValArr = valDict->find(Value[0]);
 	if (findValArr == valDict->end()) {
+		// Value array doesn't exist
 		valArr = new std::vector<std::string>;
 		(*valDict)[Value[0]] = valArr;
 	} else
 		valArr = findValArr->second;
 
 	if (CheckValueDuplicate) {
-		for (auto it = valArr->begin();it != valArr->end(); ++it) {
+		for (auto it = valArr->begin();it != valArr->end();it++) {
 			if (*it == Value) {
 				return false;
 			}
@@ -151,7 +169,7 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 	return true;
 }
 
-ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap)
+ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, bool AddDefaultValues)
 {
 	TheMap = new google::dense_hash_map<
 		char, // Key first char
@@ -168,14 +186,17 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 	TheMap->set_empty_key(U'\x0');
 	TheMap->set_deleted_key(U'\x1');
 
-	for (auto x = 'A';x <= 'Z';x++) {
-		AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
-		AddMapping(std::string(1, (char)x), std::string(1, (char)(x + 0x20)), true);
+	if (AddDefaultValues) {
+		// Add some default values
+		for (auto x = 'A';x <= 'Z';x++) {
+			AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
+			AddMapping(std::string(1, (char)x), std::string(1, (char)(x + 0x20)), true);
+		}
+		for (auto x = '0';x <= '9';x++)
+			AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
 	}
-	for (auto x = '0';x <= '9';x++)
-		AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
 
-	for (auto it = InputMap.begin();it != InputMap.end();++it)
+	for (auto it = InputMap.begin();it != InputMap.end();it++)
 		AddMapping(it->first, it->second, true);
 }
 
@@ -186,19 +207,21 @@ void ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value
 
 	Storage.Reset();
 
+	// Find array of whole keys
 	auto keyArr = TheMap->find(Key[0]);
 	if (keyArr == TheMap->end())
 		return;
 
-	for (auto it = keyArr->second->begin();it != keyArr->second->end();++it) {
+	for (auto it = keyArr->second->begin();it != keyArr->second->end();it++) {
 		if ((*it)->first.length() <= Key.length() && (*it)->first == std::string_view(Key.data(), (*it)->first.length())) {
+			// Whole key found, search for value array
 			auto foundArr = (*it)->second->find(Value[0]);
 			if (foundArr == (*it)->second->end())
 				continue;
 
-			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();++it2) {
+			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();it2++) {
 				if (it2->length() <= Value.length() && *it2 == std::string_view(Value.data(), it2->length()))
-					Storage.Push(std::pair((*it)->first, *it2));
+					Storage.Push(std::pair((*it)->first, *it2)); // Whole value found
 			}
 		}
 	}
@@ -208,35 +231,42 @@ void ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value
 
 std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::unordered_set<std::string> Skip, bool MatchRepeating)
 {
-	std::stack<MatchingState> MatchingStack;
-	StackVector<std::pair<std::string, std::string>> MappingsStorage;
+	std::stack<MatchingState> matchingStack;
+	StackVector<std::pair<std::string, std::string>> mappingsStorage;
 
-	if (State.In.length() == 0)
-		return std::pair(-1, -1);
-
-	// Input string contains a 0 width pixel space for sure :)
-	if (State.Contains.length() == 0)
-		return std::pair(0, 0);
+	assert(State.Contains.length() > 0);
 
 	while (true) {
+		if (State.In.length() == 0) {
+			// Current state ate all of `In` and we have no other state to get from stack
+			if (matchingStack.empty())
+				return std::pair(-1, -1);
+
+			// This happens when there are still matches in stack but current state ate all of `In`
+			State = matchingStack.top();
+			matchingStack.pop();
+			continue;
+		}
+		
 		if (MatchRepeating) {
 			// Try to match repeating substring
-			GetMappings(State.LastMatched, State.In, MappingsStorage);
-			if (MappingsStorage.Size() != 0) {
+			GetMappings(State.LastMatched, State.In, mappingsStorage);
+			if (mappingsStorage.Size() != 0) {
 				// Push every new matching path
-				if (MappingsStorage.IsStack) {
-					for (auto x = 0;x < MappingsStorage.CurSize;x++) {
-						MatchingStack.push(MatchingState(
-							std::string_view(State.In.data() + MappingsStorage.Stack[x].second.length()),
+				if (mappingsStorage.IsStack) {
+					for (auto x = 0;x < mappingsStorage.CurSize;x++) {
+						matchingStack.push(MatchingState(
+							std::string_view(State.In.data() + mappingsStorage.Stack[x].second.length()),
 							State.Contains,
 							State.StartingIndex,
-							State.MatchedChars + MappingsStorage.Stack[x].second.length(),
+							State.MatchedChars + mappingsStorage.Stack[x].second.length(),
 							State.LastMatched
 						));
 					}
 				} else {
-					for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();++it) {
-						MatchingStack.push(MatchingState(
+					// Heap ver., code kinda repeats but I'm not dealing with custom iterators
+					for (auto it = mappingsStorage.Heap.begin();it != mappingsStorage.Heap.end();it++) {
+						matchingStack.push(MatchingState(
 							std::string_view(State.In.data() + it->second.length()),
 							State.Contains,
 							State.StartingIndex,
@@ -253,7 +283,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 		bool skippedAny;
 		do {
 			skippedAny = false;
-			for (auto it = Skip.begin();it != Skip.end();++it) {
+			for (auto it = Skip.begin();it != Skip.end();it++) {
 				if (it->size() <= (State.In.size() - skipBytes) && std::string_view(State.In.data() + skipBytes, it->size()) == *it) {
 					skipBytes += it->size();
 					skippedAny = true;
@@ -261,9 +291,9 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 			}
 		} while (skippedAny);
 
-		// Push new path if applicable
 		if (skipBytes != 0) {
-			MatchingStack.push(MatchingState(
+			// Push new path
+			matchingStack.push(MatchingState(
 				std::string_view(State.In.data() + skipBytes),
 				State.Contains,
 				State.StartingIndex,
@@ -272,28 +302,31 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 			));
 		}
 
-		// Try to match next char - main technique
-		GetMappings(State.Contains, State.In, MappingsStorage);
-		if (MappingsStorage.Size() != 0) {
-			if (MappingsStorage.IsStack) {
-				for (auto x = 0;x < MappingsStorage.CurSize;x++) {
-					if (MappingsStorage.Stack[x].first.length() == State.Contains.length())
-						return std::pair(State.StartingIndex, State.MatchedChars + MappingsStorage.Stack[x].second.length());
+		// Try to match next substring
+		GetMappings(State.Contains, State.In, mappingsStorage);
+		if (mappingsStorage.Size() != 0) {
+			if (mappingsStorage.IsStack) {
+				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
+					// If we were about to eat all of `Contains`, that means we found the whole thing
+					if (mappingsStorage.Stack[x].first.length() == State.Contains.length())
+						return std::pair(State.StartingIndex, State.MatchedChars + mappingsStorage.Stack[x].second.length());
 
-					MatchingStack.push(MatchingState(
-						std::string_view(State.In.data() + MappingsStorage.Stack[x].second.length()),
-						std::string_view(State.Contains.data() + MappingsStorage.Stack[x].first.length()),
+					// Push new path
+					matchingStack.push(MatchingState(
+						std::string_view(State.In.data() + mappingsStorage.Stack[x].second.length()),
+						std::string_view(State.Contains.data() + mappingsStorage.Stack[x].first.length()),
 						State.StartingIndex,
-						State.MatchedChars + MappingsStorage.Stack[x].second.length(),
-						std::string_view(State.Contains.data(), MappingsStorage.Stack[x].first.length())
+						State.MatchedChars + mappingsStorage.Stack[x].second.length(),
+						std::string_view(State.Contains.data(), mappingsStorage.Stack[x].first.length())
 					));
 				}
 			} else {
-				for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();++it) {
+				// Heap ver.
+				for (auto it = mappingsStorage.Heap.begin();it != mappingsStorage.Heap.end();it++) {
 					if (it->first.length() == State.Contains.length())
 						return std::pair(State.StartingIndex, State.MatchedChars + it->second.length());
 
-					MatchingStack.push(MatchingState(
+					matchingStack.push(MatchingState(
 						std::string_view(State.In.data() + it->second.length()),
 						std::string_view(State.Contains.data() + it->first.length()),
 						State.StartingIndex,
@@ -303,11 +336,14 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 				}
 			}
 		} else {
-			if (MatchingStack.empty())
+			// We didn't put any new paths into stack so check if we depleted all paths
+			if (matchingStack.empty())
 				return std::pair(-1, -1);
 		}
-		State = MatchingStack.top();
-		MatchingStack.pop();
+
+		// Fetch newest path --- this includes last new path from next substring matching
+		State = matchingStack.top();
+		matchingStack.pop();
 	}
 }
 
@@ -315,13 +351,25 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 {
 	StackVector<std::pair<std::string, std::string>> MappingsStorage;
 
+	if (Contains.length() == 0)
+		return std::pair(0, 0);
+
+	/*
+	 * No need to check for `In` length, loop never executes due it's length and returns a proper result:
+	 *  In(1), Contains(0) returns (0, 0) due to check above
+	 *  In(0), Contains(1) returns (-1, -1) due to return at the end of the method
+	 *  In(0), Contains(0) returns (0, 0) due to check above (nothing does contain nothing)
+	 */
+
 	for (auto x = StartIndex;x < In.length();x++) {
+		// Find the beginning and construct state from it
 		GetMappings(Contains, std::string_view(In.data() + x), MappingsStorage);
 		if (MappingsStorage.Size() == 0)
 			continue;
 
 		if (MappingsStorage.IsStack) {
 			for (auto i = 0;i < MappingsStorage.CurSize;i++) {
+				// Already found the whole thing when searching for beginning
 				if (MappingsStorage.Stack[i].first.length() == Contains.length())
 					return std::pair(x, MappingsStorage.Stack[i].second.length());
 
@@ -339,7 +387,8 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 				return contains;
 			}
 		} else {
-			for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();++it) {
+			// Heap ver.
+			for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();it++) {
 				if (it->first.length() == Contains.length())
 					return std::pair(x, it->second.length());
 
@@ -370,9 +419,9 @@ std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Conta
 ConfusableMatcher::~ConfusableMatcher()
 {
 	if (TheMap->size() != 0) {
-		for (auto it = TheMap->begin();it != TheMap->end(); ++it) {
-			for (auto it2 = it->second->begin();it2 != it->second->end(); ++it2) {
-				for (auto it3 = (*it2)->second->begin();it3 != (*it2)->second->end(); ++it3) {
+		for (auto it = TheMap->begin();it != TheMap->end();it++) {
+			for (auto it2 = it->second->begin();it2 != it->second->end();it2++) {
+				for (auto it3 = (*it2)->second->begin();it3 != (*it2)->second->end();it3++) {
 					delete it3->second;
 				}
 				delete (*it2)->second;

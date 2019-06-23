@@ -275,34 +275,174 @@ void Test9()
 	map.push_back(std::pair(" ", " "));
 
 	auto matcher = ConfusableMatcher(map);
+
+	for (auto x = 0;x < 1000;x++) {
+		auto res = matcher.IndexOf(
+			"NOT NICE",
+			"VERY NICE",
+			{ },
+			false,
+			0);
+		ASSERT_EQUAL(res.first, -1);
+		ASSERT_EQUAL(res.second, -1);
+
+		matcher.AddMapping("VERY", "NOT", false);
+
+		res = matcher.IndexOf(
+			"NOT NICE",
+			"VERY NICE",
+			{ },
+			false,
+			0);
+		ASSERT_EQUAL(res.first, 0);
+		ASSERT_EQUAL(res.second, 8);
+
+		matcher.RemoveMapping("VERY", "NOT");
+	}
+}
+
+void Test10()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	map.push_back(std::pair("B", "A"));
+	map.push_back(std::pair("B", "AB"));
+	map.push_back(std::pair("B", "ABC"));
+	map.push_back(std::pair("B", "ABCD"));
+	map.push_back(std::pair("B", "ABCDE"));
+	map.push_back(std::pair("B", "ABCDEF"));
+	map.push_back(std::pair("B", "ABCDEFG"));
+	map.push_back(std::pair("B", "ABCDEFGH"));
+	map.push_back(std::pair("B", "ABCDEFGHI"));
+	map.push_back(std::pair("B", "ABCDEFGHIJ"));
+	map.push_back(std::pair("B", "ABCDEFGHIJK"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKL"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLM"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMN"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNO"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOP"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQ"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQR"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQRS"));
+
+	auto matcher = ConfusableMatcher(map);
+
 	auto res = matcher.IndexOf(
-		"NOT NICE",
-		"VERY NICE",
-		{  },
-		false,
-		0);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
-
-	matcher.AddMapping("VERY", "NOT", false);
-
-	res = matcher.IndexOf(
-		"NOT NICE",
-		"VERY NICE",
+		"ABCDEFGHIJKLMNOPQRS",
+		"B",
 		{ },
 		false,
 		0);
 	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 8);
+	ASSERT(res.second >= 0 && res.second == 1);
 
-	matcher.RemoveMapping("VERY", "NOT");
-
+	matcher.RemoveMapping("B", "ABCDEFGHIJKLMNOP");
+	matcher.AddMapping("B", "P", false);
+	matcher.AddMapping("B", "PQ", false);
+	matcher.AddMapping("B", "PQR", false);
+	matcher.AddMapping("B", "PQRS", false);
+	matcher.AddMapping("B", "PQRST", false);
+	matcher.AddMapping("B", "PQRSTU", false);
+	matcher.AddMapping("B", "PQRSTUV", false);
+	matcher.AddMapping("B", "PQRSTUVW", false);
+	matcher.AddMapping("B", "PQRSTUVWX", false);
+	matcher.AddMapping("B", "PQRSTUVWXY", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ0", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ01", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ012", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ0123", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ01234", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ012345", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ0123456", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ01234567", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ012345678", false);
+	matcher.AddMapping("B", "PQRSTUVWXYZ0123456789", false);
+	
 	res = matcher.IndexOf(
-		"NOT NICE",
-		"VERY NICE",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+		"BB",
 		{ },
 		false,
 		0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 2);
+
+	res = matcher.IndexOf(
+		"PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789",
+		"BBBBBBBBBBBBBBBBBBBBBBBBBBB",
+		{  },
+		true,
+		0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT(res.second >= 0 && res.second == 547);
+}
+
+void Test11()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map);
+	auto res = matcher.IndexOf(":)", "", { }, true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 0);
+
+	res = matcher.IndexOf("", ":)", { }, true, 0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+}
+
+void Test12()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	auto matcher = ConfusableMatcher(map);
+
+	matcher.AddMapping("A", "A", false);
+	matcher.AddMapping("A", "A", false);
+	matcher.AddMapping("A", "A", false);
+	matcher.AddMapping("A", "A", false);
+
+	auto res = matcher.IndexOf("ABAAA", "ABAR", { }, true, 0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+}
+
+void Test13()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map);
+	auto res = matcher.IndexOf("?", "?", { }, true, 0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+
+	for (auto x = 0;x < 1000;x++) {
+		ASSERT_EQUAL(matcher.RemoveMapping("?", "?"), false);
+		ASSERT_EQUAL(matcher.AddMapping("?", "?", false), true);
+		ASSERT_EQUAL(matcher.RemoveMapping("?_", "?_"), false);
+		ASSERT_EQUAL(matcher.RemoveMapping("?", "_"), false);
+		ASSERT_EQUAL(matcher.RemoveMapping("?", "?__"), false);
+
+		ASSERT_EQUAL(matcher.AddMapping("?_", "?_", false), true);
+		ASSERT_EQUAL(matcher.AddMapping("?_", "_", false), true);
+		ASSERT_EQUAL(matcher.AddMapping("?_", "?___", false), true);
+		ASSERT_EQUAL(matcher.RemoveMapping("?_", "?___"), true);
+		ASSERT_EQUAL(matcher.RemoveMapping("?_", "_"), true);
+		ASSERT_EQUAL(matcher.RemoveMapping("?_", "?_"), true);
+		ASSERT_EQUAL(matcher.RemoveMapping("?", "?"), true);
+	}
+}
+
+void Test14()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map);
+
+	auto res = matcher.IndexOf("A", "A", { }, false, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 1);
+
+	auto matcher2 = ConfusableMatcher(map, false);
+	res = matcher2.IndexOf("A", "A", { }, false, 0);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -320,6 +460,11 @@ int main()
 	s.push_back(CUTE(LidlNormalizerTests));
 	s.push_back(CUTE(Test8));
 	s.push_back(CUTE(Test9));
+	s.push_back(CUTE(Test10));
+	s.push_back(CUTE(Test11));
+	s.push_back(CUTE(Test12));
+	s.push_back(CUTE(Test13));
+	s.push_back(CUTE(Test14));
 	cute::ide_listener lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }
