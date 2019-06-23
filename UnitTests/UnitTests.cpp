@@ -68,7 +68,7 @@ void Test4()
 	map.push_back(std::make_tuple('D', "[)"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("A__ _ $$$[)D", "ASD", RECURSIVE, { '_', ' ' }, true, 0);
+	auto res = matcher.StringContains("A__ _ $$$[)D", "ASD", RECURSIVE, { "_", " " }, true, 0);
 	ASSERT_EQUAL(std::get<0>(res), 0);
 	ASSERT_EQUAL(std::get<1>(res), 11);
 }
@@ -173,7 +173,7 @@ void Test7()
 
 	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains(in, "NIGGER", RECURSIVE, { '_', '%', '$' }, true, 0);
+	auto res = matcher.StringContains(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
 
 	ASSERT(
 		(std::get<0>(res) == 64 && std::get<1>(res) == 57) ||
@@ -184,52 +184,49 @@ void LidlNormalizerTests()
 {
 	auto map = GetDefaultMap();
 
-	auto matcher = ConfusableMatcher(map);
-
 	// Additional test data
-	auto keys = { 
-		'A', 'A', 'A', 'A', 'B', 'B', 'U', 'U', 'O', 'O', 'A', 'A',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
+	std::vector<char> keys = { 
+		'A', 'A', 'A', 'A', 'B', 'U', 'U', 'O', 'O', 'A', 'A',
+		'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
 		'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+		'U', 'A', ' ', 'S', 'M', 'O', 'L', 'N', 'A', 'T', 'I', 'O', 'N', 'N', 'I', 'G', 'N', 'I'
 	};
-	auto vals = {
-		"ą", "ꬱ", "ᵃ", "å", "🅱", "⒝", "ü", "Ü", "ö", "Ö", "ä", "Ä",
-		"⒜", "⒝", "⒞", "⒟", "⒠", "⒡", "⒢", "⒣", "⒤", "⒥", "⒦", "⒧", "⒨", "⒩", "⒪", "⒫", "⒬", "⒭", "⒮", "⒯", "⒰", "⒱", "⒲", "⒳", "⒴",
-		"Ⓩ", "ⓐ", "ⓑ", "ⓒ", "ⓓ", "ⓔ", "ⓕ", "ⓖ", "ⓗ", "ⓘ", "ⓙ", "ⓚ", "ⓛ", "ⓜ", "ⓝ", "ⓞ", "ⓟ", "ⓠ", "ⓡ", "ⓢ", "ⓣ", "ⓤ", "ⓥ", "ⓦ", "ⓧ", "ⓨ", "ⓩ", "⓪",
-		"𝕒", "𝕓", "𝕔", "𝕕", "𝕖", "𝕗", "𝕘", "𝕙", "𝕚", "𝕛", "𝕜", "𝕝", "𝕞", "𝕟", "𝕠", "𝕡", "𝕢", "𝕣", "𝕤", "𝕥", "𝕦", "𝕧", "𝕨", "𝕩", "𝕪", "𝕫",
-		"🄰", "🄱", "🄲", "🄳", "🄴", "🄵", "🄶", "🄷", "🄸", "🄹", "🄺", "🄻", "🄼", "🄽", "🄾", "🄿", "🅀", "🅁", "🅂", "🅃", "🅄", "🅅", "🅆", "🅇", "🅈", "🅉",
-		"₳", "฿", "₵", "Đ", "Ɇ", "₣", "₲", "Ⱨ", "ł", "J", "₭", "Ⱡ", "₥", "₦", "Ø", "₱", "Q", "Ɽ", "₴", "₮", "Ʉ", "V", "₩", "Ӿ", "Ɏ", "Ⱬ",
-		"𝖆", "𝖇", "𝖈", "𝖉", "𝖊", "𝖋", "𝖌", "𝖍", "𝖎", "𝖏", "𝖐", "𝖑", "𝖒", "𝖓", "𝖔", "𝖕", "𝖖", "𝖗", "𝖘", "𝖙", "𝖚", "𝖛", "𝖜", "𝖝", "𝖞", "𝖟",
-		"🅰", "🅱", "🅲", "🅳", "🅴", "🅵", "🅶", "🅷", "🅸", "🅹", "🅺", "🅻", "🅼", "🅽", "🅾", "🅿", "🆀", "🆁", "🆂", "🆃", "🆄", "🆅", "🆆", "🆇", "🆈", "🆉"
+	std::vector<std::string> vals = {
+		"\U00000105", "\U0000ab31", "\U00001d43", "\U000000e5", "\U0000249d", "\U000000fc", "\U000000dc", "\U000000f6", "\U000000d6", "\U000000e4", "\U000000c4",
+		"\U0000249c", "\U0000249e", "\U0000249f", "\U000024a0", "\U000024a1", "\U000024a2", "\U000024a3", "\U000024a4", "\U000024a5", "\U000024a6", "\U000024a7", "\U000024a8", "\U000024a9", "\U000024aa", "\U000024ab", "\U000024ac", "\U000024ad", "\U000024ae", "\U000024af", "\U000024b0", "\U000024b1", "\U000024b2", "\U000024b3", "\U000024b4", "\U000024cf", "\U000024d0", "\U000024d1", "\U000024d2", "\U000024d3", "\U000024d4", "\U000024d5", "\U000024d6", "\U000024d7", "\U000024d8", "\U000024d9", "\U000024da", "\U000024db", "\U000024dc", "\U000024dd", "\U000024de", "\U000024df", "\U000024e0", "\U000024e1", "\U000024e2", "\U000024e3", "\U000024e4", "\U000024e5", "\U000024e6", "\U000024e7", "\U000024e8", "\U000024e9", "\U000024ea", "\U0001d552", "\U0001d553", "\U0001d554", "\U0001d555", "\U0001d556", "\U0001d557", "\U0001d558", "\U0001d559", "\U0001d55a", "\U0001d55b", "\U0001d55c", "\U0001d55d", "\U0001d55e", "\U0001d55f", "\U0001d560", "\U0001d561", "\U0001d562", "\U0001d563", "\U0001d564", "\U0001d565", "\U0001d566", "\U0001d567", "\U0001d568", "\U0001d569", "\U0001d56a", "\U0001d56b", "\U0001f130", "\U0001f131", "\U0001f132", "\U0001f133", "\U0001f134", "\U0001f135", "\U0001f136", "\U0001f137", "\U0001f138", "\U0001f139", "\U0001f13a", "\U0001f13b", "\U0001f13c", "\U0001f13d", "\U0001f13e", "\U0001f13f", "\U0001f140", "\U0001f141", "\U0001f142", "\U0001f143", "\U0001f144", "\U0001f145", "\U0001f146", "\U0001f147", "\U0001f148", "\U0001f149", "\U000020b3", "\U00000e3f", "\U000020b5", "\U00000110", "\U00000246", "\U000020a3", "\U000020b2", "\U00002c67", "\U00000142", "\U0000004a", "\U000020ad", "\U00002c60", "\U000020a5", "\U000020a6", "\U000000d8", "\U000020b1", "\U00000051", "\U00002c64", "\U000020b4", "\U000020ae", "\U00000244", "\U00000056", "\U000020a9", "\U000004fe", "\U0000024e", "\U00002c6b", "\U0001d586", "\U0001d587", "\U0001d588", "\U0001d589", "\U0001d58a", "\U0001d58b", "\U0001d58c", "\U0001d58d", "\U0001d58e", "\U0001d58f", "\U0001d590", "\U0001d591", "\U0001d592", "\U0001d593", "\U0001d594", "\U0001d595", "\U0001d596", "\U0001d597", "\U0001d598", "\U0001d599", "\U0001d59a", "\U0001d59b", "\U0001d59c", "\U0001d59d", "\U0001d59e", "\U0001d59f", "\U0001f170", "\U0001f171", "\U0001f172", "\U0001f173", "\U0001f174", "\U0001f175", "\U0001f176", "\U0001f177", "\U0001f178", "\U0001f179", "\U0001f17a", "\U0001f17b", "\U0001f17c", "\U0001f17d", "\U0001f17e", "\U0001f17f", "\U0001f180", "\U0001f181", "\U0001f182", "\U0001f183", "\U0001f184", "\U0001f185", "\U0001f186", "\U0001f187", "\U0001f188", "\U0001f189", "\U0001f1fa", "\U0001f1e6", " ", "\U000002e2", "\U00001d50", "\U00001d52", "\U000002e1", "\U0000207f", "\U00001d43", "\U00001d57", "\U00001da6", "\U00001d52", "\U0000207f", "\U0000041d", "\U00000438", "\U00000433", "\U0001F1F3", "\U0001F1EE"
 	};
 	
+	for (auto x = 0;x < keys.size();x++)
+		map.push_back(std::make_tuple(keys[x], vals[x]));
+
+	auto matcher = ConfusableMatcher(map);
 
 	auto data = {
-		std::make_tuple(std::vector({ "ą", "A" }), std::vector({ 0, 1 })),
-		std::make_tuple(std::vector({ "ꬱ", "A" }), std::vector({ 0, 1 })),
-		std::make_tuple(std::vector({ "ᵃ", "A" }), std::vector({ 0, 1 })),
-		std::make_tuple(std::vector({ "abc å def", "ABC A DEF" }), std::vector({ 0, 9 })),
-		std::make_tuple(std::vector({ "ˢᵐᵒˡ ⁿᵃᵗᶦᵒⁿ", "SMOL NATION" }), std::vector({ 0, 11 })),
-		std::make_tuple(std::vector({ "Ниг", "NIG" }), std::vector({ 0, 3 })),
-		//std::make_tuple(std::vector({ "🇺🇦XD", "UAXD" }), std::vector({ 0, 3 })),
+		std::make_tuple(std::vector({ "\U00000105", "A" }), std::vector({ 0, 2 })),
+		std::make_tuple(std::vector({ "\U0000ab31", "A" }), std::vector({ 0, 3 })),
+		std::make_tuple(std::vector({ "\U00001d43", "A" }), std::vector({ 0, 3 })),
+		std::make_tuple(std::vector({ "abc \U000000e5 def", "ABC A DEF" }), std::vector({ 0, 10 })),
+		std::make_tuple(std::vector({ "\U000002e2\U00001d50\U00001d52\U000002e1 \U0000207f\U00001d43\U00001d57\U00001da6\U00001d52\U0000207f", "SMOL NATION" }), std::vector({ 0, 29 })),
+		std::make_tuple(std::vector({ "\U0000041d\U00000438\U00000433", "NIG" }), std::vector({ 0, 6 })),
+		std::make_tuple(std::vector({ "\U0001f1fa\U0001f1e6XD", "UAXD" }), std::vector({ 0, 10 })),
 		//std::make_tuple(std::vector({ "🆓 ICE", "FREE ICE" }), std::vector({ 0, 5 })),
-		std::make_tuple(std::vector({ "chocolate 🇳🇮b", "CHOCOLATE NIB" }), std::vector({ 0, 13 })),
-		std::make_tuple(std::vector({ "🅱lueberry", "BLUEBERRY" }), std::vector({ 0, 9 })),
-		std::make_tuple(std::vector({ "⒝", "b" }), std::vector({ 0, 1 })),
-		std::make_tuple(std::vector({ "ü Ü ö Ö ä Ä", "U U O O A A" }), std::vector({ 0, 11 })),
+		std::make_tuple(std::vector({ "chocolate \U0001F1F3\U0001F1EEb", "CHOCOLATE NIB" }), std::vector({ 0, 19 })),
+		std::make_tuple(std::vector({ "\U0001f171lueberry", "BLUEBERRY" }), std::vector({ 0, 12 })),
+		std::make_tuple(std::vector({ "\U0000249d", "B" }), std::vector({ 0, 3 })),
+		std::make_tuple(std::vector({ "\U000000fc \U000000dc \U000000f6 \U000000d6 \U000000e4 \U000000c4", "U U O O A A" }), std::vector({ 0, 17 })),
 		//std::make_tuple(std::vector({ "ᴭ", "AE" }), std::vector({ 0, 1 })),
-		std::make_tuple(std::vector({ "⒜ ⒝ ⒞ ⒟ ⒠ ⒡ ⒢ ⒣ ⒤ ⒥ ⒦ ⒧ ⒨ ⒩ ⒪ ⒫ ⒬ ⒭ ⒮ ⒯ ⒰ ⒱ ⒲ ⒳ ⒴", "A B C D E F G H I J K L M N O P Q R S T U V W X Y" }), std::vector({ 0, 49 })),
-		std::make_tuple(std::vector({ "Ⓩⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩ⓪", "ZABCDEFGHIJKLMNOPQRSTUVWXYZ0" }), std::vector({ 0, 28 })),
-		std::make_tuple(std::vector({ "𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 26 })),
-		std::make_tuple(std::vector({ "🄰🄱🄲🄳🄴🄵🄶🄷🄸🄹🄺🄻🄼🄽🄾🄿🅀🅁🅂🅃🅄🅅🅆🅇🅈🅉", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 26 })),
-		std::make_tuple(std::vector({ "₳฿₵ĐɆ₣₲ⱧłJ₭Ⱡ₥₦Ø₱QⱤ₴₮ɄV₩ӾɎⱫ", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 26 })),
-		std::make_tuple(std::vector({ "𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 26 })),
-		std::make_tuple(std::vector({ "🅰🅱🅲🅳🅴🅵🅶🅷🅸🅹🅺🅻🅼🅽🅾🅿🆀🆁🆂🆃🆄🆅🆆🆇🆈🆉", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 26 }))
+		std::make_tuple(std::vector({ "\U0000249c \U0000249d \U0000249e \U0000249f \U000024a0 \U000024a1 \U000024a2 \U000024a3 \U000024a4 \U000024a5 \U000024a6 \U000024a7 \U000024a8 \U000024a9 \U000024aa \U000024ab \U000024ac \U000024ad \U000024ae \U000024af \U000024b0 \U000024b1 \U000024b2 \U000024b3 \U000024b4", "A B C D E F G H I J K L M N O P Q R S T U V W X Y" }), std::vector({ 0, 99 })),
+		std::make_tuple(std::vector({ "\U000024cf\U000024d0\U000024d1\U000024d2\U000024d3\U000024d4\U000024d5\U000024d6\U000024d7\U000024d8\U000024d9\U000024da\U000024db\U000024dc\U000024dd\U000024de\U000024df\U000024e0\U000024e1\U000024e2\U000024e3\U000024e4\U000024e5\U000024e6\U000024e7\U000024e8\U000024e9\U000024ea", "ZABCDEFGHIJKLMNOPQRSTUVWXYZ0" }), std::vector({ 0, 84 })),
+		std::make_tuple(std::vector({ "\U0001d552\U0001d553\U0001d554\U0001d555\U0001d556\U0001d557\U0001d558\U0001d559\U0001d55a\U0001d55b\U0001d55c\U0001d55d\U0001d55e\U0001d55f\U0001d560\U0001d561\U0001d562\U0001d563\U0001d564\U0001d565\U0001d566\U0001d567\U0001d568\U0001d569\U0001d56a\U0001d56b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 104 })),
+		std::make_tuple(std::vector({ "\U0001f130\U0001f131\U0001f132\U0001f133\U0001f134\U0001f135\U0001f136\U0001f137\U0001f138\U0001f139\U0001f13a\U0001f13b\U0001f13c\U0001f13d\U0001f13e\U0001f13f\U0001f140\U0001f141\U0001f142\U0001f143\U0001f144\U0001f145\U0001f146\U0001f147\U0001f148\U0001f149", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 104 })),
+		std::make_tuple(std::vector({ "\U000020b3\U00000e3f\U000020b5\U00000110\U00000246\U000020a3\U000020b2\U00002c67\U00000142J\U000020ad\U00002c60\U000020a5\U000020a6\U000000d8\U000020b1Q\U00002c64\U000020b4\U000020ae\U00000244V\U000020a9\U000004fe\U0000024e\U00002c6b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 65 })),
+		std::make_tuple(std::vector({ "\U0001d586\U0001d587\U0001d588\U0001d589\U0001d58a\U0001d58b\U0001d58c\U0001d58d\U0001d58e\U0001d58f\U0001d590\U0001d591\U0001d592\U0001d593\U0001d594\U0001d595\U0001d596\U0001d597\U0001d598\U0001d599\U0001d59a\U0001d59b\U0001d59c\U0001d59d\U0001d59e\U0001d59f", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 104 })),
+		std::make_tuple(std::vector({ "\U0001f170\U0001f171\U0001f172\U0001f173\U0001f174\U0001f175\U0001f176\U0001f177\U0001f178\U0001f179\U0001f17a\U0001f17b\U0001f17c\U0001f17d\U0001f17e\U0001f17f\U0001f180\U0001f181\U0001f182\U0001f183\U0001f184\U0001f185\U0001f186\U0001f187\U0001f188\U0001f189", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector({ 0, 104 }))
 	};
 
 	for (auto entry : data) {
@@ -249,13 +246,13 @@ void Test8()
 	auto matcher = ConfusableMatcher(map);
 	auto res = matcher.StringContains(
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
-		"abcdefghijklmnopqrstucwxyz01234567890",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890",
 		RECURSIVE,
-		{ '\U00000332', '\U00000305', '[', ']' },
+		{ "\U00000332", "\U00000305", "[", "]" },
 		false,
 		0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 26);
+	ASSERT_EQUAL(std::get<0>(res), 5);
+	ASSERT_EQUAL(std::get<1>(res), 397);
 }
 
 int main()

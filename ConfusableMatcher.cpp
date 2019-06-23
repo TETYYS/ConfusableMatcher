@@ -82,7 +82,11 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> 
 	TheMap->set_empty_key(U'\x0');
 	TheMap->set_deleted_key(U'\x1');
 
-	for (auto x = 'A';x <= 'Z';x++)
+	for (auto x = 'A';x <= 'Z';x++) {
+		AddMapping((char)x, std::string(1, (char)x), true);
+		AddMapping((char)x, std::string(1, (char)(x + 0x20)), true);
+	}
+	for (auto x = '0';x <= '9';x++)
 		AddMapping((char)x, std::string(1, (char)x), true);
 
 	for (auto it = InputMap.begin();it != InputMap.end();++it) {
@@ -129,7 +133,7 @@ std::vector<int> ConfusableMatcher::GetMatchedLengthsSingleChar(std::string_view
 	return ret;
 }
 
-std::tuple<int, int> ConfusableMatcher::StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating)
+std::tuple<int, int> ConfusableMatcher::StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating)
 {
 	std::stack<MatchingState> MatchingStack;
 
@@ -158,20 +162,26 @@ std::tuple<int, int> ConfusableMatcher::StringContainsInner(MatchingState State,
 			}
 		}
 
-		// Try to skip chars
-		int skipCount;
-		for (skipCount = 0;;skipCount++) {
-			if (!SkipChars.contains(State.In[skipCount]))
-				break;
-		}
+		// Try to skip specified substrings
+		int skipBytes = 0;
+		bool skippedAny;
+		do {
+			skippedAny = false;
+			for (auto it = Skip.begin();it != Skip.end();++it) {
+				if (it->size() <= (State.In.size() - skipBytes) && std::string_view(State.In.data() + skipBytes, it->size()) == *it) {
+					skipBytes += it->size();
+					skippedAny = true;
+				}
+			}
+		} while (skippedAny);
 
 		// Push new path if applicable
-		if (skipCount != 0) {
+		if (skipBytes != 0) {
 			MatchingStack.push(MatchingState(
-				std::string_view(State.In.data() + skipCount),
+				std::string_view(State.In.data() + skipBytes),
 				State.Contains,
 				State.StartingIndex,
-				State.MatchedChars + skipCount,
+				State.MatchedChars + skipBytes,
 				State.LastMatchedChar
 			));
 		}
@@ -206,12 +216,15 @@ std::tuple<int, int> ConfusableMatcher::StringContainsInner(MatchingState State,
 	}
 }
 
-std::tuple<int, int> ConfusableMatcher::StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex)
+std::tuple<int, int> ConfusableMatcher::StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	for (auto x = StartIndex;x < In.length();x++) {
 		auto matched = GetMatchedLengthsSingleChar(std::string_view(In.data() + x), Contains[0]);
-		if (matched.size() == 1 && matched[0] == -1)
+		if (matched[0] == -1)
 			continue;
+
+		if (Contains.length() == 1 && matched[0] == In.length())
+			return std::make_tuple(0, In.length());
 
 		for (auto it = matched.begin();it != matched.end();++it) {
 			auto contains = StringContainsInner(MatchingState(
@@ -220,7 +233,7 @@ std::tuple<int, int> ConfusableMatcher::StringContainsFromView(std::string_view 
 				x,
 				*it,
 				Contains[0]
-			), Mode, SkipChars, MatchRepeating);
+			), Mode, Skip, MatchRepeating);
 
 			if (std::get<0>(contains) == -1)
 				continue;
@@ -231,10 +244,10 @@ std::tuple<int, int> ConfusableMatcher::StringContainsFromView(std::string_view 
 	return std::make_tuple(-1, -1);
 }
 
-std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex)
+std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	assert(StartIndex <= In.length() && StartIndex >= 0);
-	return StringContainsFromView(std::string_view(In), std::string_view(Contains), Mode, SkipChars, MatchRepeating, StartIndex);
+	return StringContainsFromView(std::string_view(In), std::string_view(Contains), Mode, Skip, MatchRepeating, StartIndex);
 }
 
 ConfusableMatcher::~ConfusableMatcher()

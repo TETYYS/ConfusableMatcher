@@ -53,9 +53,9 @@ class ConfusableMatcher
 	std::vector<int>
 		GetMatchedLengthsSingleChar(std::string_view In, char Match);
 	std::tuple<int, int>
-		StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex);
+		StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
 	std::tuple<int, int>
-		StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating);
+		StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating);
 
 	public:
 	ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap);
@@ -64,7 +64,7 @@ class ConfusableMatcher
 	bool
 		RemoveMapping(char Key, std::string Value);
 	std::tuple<int, int>
-		StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<char> SkipChars, bool MatchRepeating, int StartIndex = 0);
+		StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex = 0);
 
 	~ConfusableMatcher();
 };
