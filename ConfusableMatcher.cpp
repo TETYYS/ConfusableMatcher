@@ -1,127 +1,221 @@
 ﻿#include <iostream>
 #include <chrono>
 #include <stack>
+#include <sstream>
 
 #include <sparsehash/dense_hash_map>
 using google::dense_hash_map;
 #include "ConfusableMatcher.h"
+#include <Windows.h>
 
 
-bool ConfusableMatcher::RemoveMapping(char Key, std::string Value)
+bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 {
-	dense_hash_map<char, std::vector<std::string> *> *dict;
+	std::vector<
+		std::pair<
+			std::string, // Key whole
+			google::dense_hash_map<
+				char, // Value first char
+				std::vector<std::string>* // Values whole
+			>*
+		>*
+	> *keyArr;
+	auto findKeyArr = TheMap->find(Key[0]);
 
-	if ((dict = (*TheMap)[Key]) == nullptr)
+	if (findKeyArr == TheMap->end())
 		return false;
+	keyArr = findKeyArr->second;
 
-	std::vector<std::string> *foundArr;
-
-	if ((foundArr = (*dict)[Value[0]]) == nullptr)
-		return false;
+	google::dense_hash_map<
+		char, // Value first char
+		std::vector<std::string>* // Values whole
+	> *valDict = nullptr;
 	
-	for (auto it = foundArr->begin();it != foundArr->end(); ++it) {
-		if (*it == Value) {
-			foundArr->erase(it);
-
-			if (foundArr->size() == 0) {
-				(*dict).erase(Value[0]);
-				delete foundArr;
-				if ((*dict).size() == 0) {
-					TheMap->erase(Key);
-					delete dict;
-				}
-			}
-
-			return true;
+	for (auto it = keyArr->begin();it != keyArr->end();++it) {
+		if ((*it)->first == Key) {
+			valDict = (*it)->second;
+			break;
 		}
+	}
+
+	if (valDict == nullptr)
+		return false;
+
+	std::vector<std::string> *valArr;
+	auto findValArr = valDict->find(Value[0]);
+	if (findValArr == valDict->end())
+		return false;
+	valArr = findValArr->second;
+	
+	for (auto it = valArr->begin();it != valArr->end(); ++it) {
+		if (*it != Value)
+			continue;
+
+		valArr->erase(it);
+
+		if (valArr->size() != 0)
+			return true;
+
+		valDict->erase(Value[0]);
+		delete valArr;
+
+		if (valDict->size() != 0)
+			return true;
+
+		for (auto it2 = keyArr->begin();it2 != keyArr->end();++it2) {
+			if ((*it2)->first == Key) {
+				keyArr->erase(it2);
+				delete *it2;
+			}
+		}
+			
+		if (keyArr->size() != 0)
+			return true;
+
+		TheMap->erase(Key[0]);
+		delete keyArr;
+
+		return true;
 	}
 
 	return false;
 }
 
-bool ConfusableMatcher::AddMapping(char Key, std::string Value, bool CheckValueDuplicate)
+bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate)
 {
-	auto dict = TheMap->find(Key);
+	std::vector<
+		std::pair<
+			std::string, // Key whole
+			google::dense_hash_map<
+				char, // Value first char
+				std::vector<std::string>* // Values whole
+			>*
+		>*
+	>* keyArr;
+	auto findKeyArr = TheMap->find(Key[0]);
 
-	if (dict == TheMap->end()) {
+	if (findKeyArr == TheMap->end()) {
 		// Root doesn't exist
-		auto newDict = new dense_hash_map<char, std::vector<std::string> *>;
-		newDict->set_empty_key(U'\x0');
-		newDict->set_deleted_key(U'\x1');
-		(*TheMap)[Key] = newDict;
+		keyArr = new std::vector<
+			std::pair<
+				std::string, // Key whole
+				google::dense_hash_map<
+					char, // Value first char
+					std::vector<std::string>* // Values whole
+				>*
+			>*
+		>;
+		(*TheMap)[Key[0]] = keyArr;
+	} else
+		keyArr = findKeyArr->second;
 
-		auto newArr = new std::vector<std::string>;
-		newArr->push_back(Value);
-		(*newDict)[Value[0]] = newArr;
-		return true;
-	} else {
-		auto foundArr = dict->second->find(Value[0]);
-		if (foundArr != dict->second->end()) {
-			if (CheckValueDuplicate) {
-				for (auto it = foundArr->second->begin();it != foundArr->second->end(); ++it) {
-					if (*it == Value) {
-						return false;
-					}
-				}
-			}
+	google::dense_hash_map<
+		char, // Value first char
+		std::vector<std::string>* // Values whole
+	> *valDict = nullptr;
 
-			foundArr->second->push_back(Value);
-			return true;
+	for (auto it = keyArr->begin();it != keyArr->end();++it) {
+		if ((*it)->first == Key) {
+			valDict = (*it)->second;
+			break;
 		}
-
-		auto newArr = new std::vector<std::string>;
-		newArr->push_back(Value);
-		(*dict->second)[Value[0]] = newArr;
-		return true;
 	}
+
+	if (valDict == nullptr) {
+		valDict = new google::dense_hash_map<
+			char, // Value first char
+			std::vector<std::string> * // Values whole
+		>;
+		valDict->set_empty_key('\x0');
+		valDict->set_deleted_key('\x1');
+		keyArr->push_back(new std::pair(Key, valDict));
+	}
+
+	std::vector<std::string> *valArr;
+	auto findValArr = valDict->find(Value[0]);
+	if (findValArr == valDict->end()) {
+		valArr = new std::vector<std::string>;
+		(*valDict)[Value[0]] = valArr;
+	} else
+		valArr = findValArr->second;
+
+	if (CheckValueDuplicate) {
+		for (auto it = valArr->begin();it != valArr->end(); ++it) {
+			if (*it == Value) {
+				return false;
+			}
+		}
+	}
+
+	valArr->push_back(Value);
+	return true;
 }
 
-ConfusableMatcher::ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap)
+ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap)
 {
-	TheMap = new google::dense_hash_map<char, google::dense_hash_map<char, std::vector<std::string>*>*>();
+	TheMap = new google::dense_hash_map<
+		char, // Key first char
+		std::vector<
+			std::pair<
+				std::string, // Key whole
+				google::dense_hash_map<
+					char, // Value first char
+					std::vector<std::string>* // Values whole
+				>*
+			>*
+		>*
+	>;
 	TheMap->set_empty_key(U'\x0');
 	TheMap->set_deleted_key(U'\x1');
 
 	for (auto x = 'A';x <= 'Z';x++) {
-		AddMapping((char)x, std::string(1, (char)x), true);
-		AddMapping((char)x, std::string(1, (char)(x + 0x20)), true);
+		AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
+		AddMapping(std::string(1, (char)x), std::string(1, (char)(x + 0x20)), true);
 	}
 	for (auto x = '0';x <= '9';x++)
-		AddMapping((char)x, std::string(1, (char)x), true);
+		AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
 
-	for (auto it = InputMap.begin();it != InputMap.end();++it) {
-		char k;
-		std::string v;
-		std::tie(k, v) = *it;
-
-		AddMapping(k, v, true);
-	}
+	for (auto it = InputMap.begin();it != InputMap.end();++it)
+		AddMapping(it->first, it->second, true);
 }
 
-std::vector<std::string> *ConfusableMatcher::GetValues(char Key, char ValFirstPart)
+std::vector<std::pair<std::string, std::string>> ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value)
 {
-	auto dict = TheMap->find(Key);
-	if (dict == TheMap->end())
-		return nullptr;
+	assert(Key.length() >= 1);
+	assert(Value.length() >= 1);
 
-	auto foundArr = dict->second->find(ValFirstPart);
-	if (foundArr == dict->second->end())
-		return nullptr;
+	std::vector<std::pair<std::string, std::string>> ret;
 
-	return foundArr->second;
-}
-
-std::vector<int> ConfusableMatcher::GetMatchedLengthsSingleChar(std::string_view In, char Match)
-{
-	auto vals = GetValues(Match, In[0]);
-	std::vector<int> ret;
-
-	if (vals == nullptr) {
-		ret.push_back(-1);
+	auto keyArr = TheMap->find(Key[0]);
+	if (keyArr == TheMap->end())
 		return ret;
+
+	for (auto it = keyArr->second->begin();it != keyArr->second->end();++it) {
+		if ((*it)->first.length() <= Key.length() && (*it)->first == std::string_view(Key.data(), (*it)->first.length())) {
+			auto foundArr = (*it)->second->find(Value[0]);
+			if (foundArr == (*it)->second->end())
+				continue;
+
+			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();++it2) {
+				if (it2->length() <= Value.length() && *it2 == std::string_view(Value.data(), it2->length()))
+					ret.push_back(std::pair((*it)->first, *it2));
+			}
+		}
 	}
 
-	for (auto it = vals->begin();it != vals->end();++it) {
+	return ret;
+}
+
+/*std::vector<std::pair<int, int>> ConfusableMatcher::GetMatchedLengths(std::string_view In, std::string_view Contains)
+{
+	auto vals = GetMappings(In, Contains);
+	std::vector<std::pair<int, int>> ret;
+
+	if (vals.size() == 0)
+		return ret;
+
+	for (auto it = vals.begin();it != vals.end();++it) {
+		ret.push_back()
 		if (it->length() <= In.length() && *it == std::string_view(In.data(), it->length())) {
 			ret.push_back(it->length());
 		}
@@ -131,32 +225,32 @@ std::vector<int> ConfusableMatcher::GetMatchedLengthsSingleChar(std::string_view
 		ret.push_back(-1);
 
 	return ret;
-}
+}*/
 
-std::tuple<int, int> ConfusableMatcher::StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating)
+std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating)
 {
 	std::stack<MatchingState> MatchingStack;
 
 	if (State.In.length() == 0)
-		return std::make_tuple(-1, -1);
+		return std::pair(-1, -1);
 
 	// Input string contains a 0 width pixel space for sure :)
 	if (State.Contains.length() == 0)
-		return std::make_tuple(0, 0);
+		return std::pair(0, 0);
 
 	while (true) {
 		if (MatchRepeating) {
-			// Try to match repeating char
-			auto matchedRepeating = GetMatchedLengthsSingleChar(State.In, State.LastMatchedChar);
-			if (matchedRepeating[0] != -1) {
+			// Try to match repeating substring
+			auto matchedRepeating = GetMappings(State.LastMatched, State.In);
+			if (matchedRepeating.size() != 0) {
 				// Push every new matching path
 				for (auto it = matchedRepeating.begin();it != matchedRepeating.end();++it) {
 					MatchingStack.push(MatchingState(
-						std::string_view(State.In.data() + *it),
+						std::string_view(State.In.data() + it->second.length()),
 						State.Contains,
 						State.StartingIndex,
-						State.MatchedChars + *it,
-						State.LastMatchedChar
+						State.MatchedChars + it->second.length(),
+						State.LastMatched
 					));
 				}
 			}
@@ -182,72 +276,66 @@ std::tuple<int, int> ConfusableMatcher::StringContainsInner(MatchingState State,
 				State.Contains,
 				State.StartingIndex,
 				State.MatchedChars + skipBytes,
-				State.LastMatchedChar
+				State.LastMatched
 			));
 		}
 
 		// Try to match next char - main technique
-		auto matchedNext = GetMatchedLengthsSingleChar(State.In, State.Contains[0]);
-		if (matchedNext[0] != -1) {
-			if (State.Contains.length() <= 1) {
-				// If we have only 1 `contains` char right now, return entirely as we matched the entire string
-				return std::make_tuple(State.StartingIndex, State.MatchedChars + matchedNext[0]);
-			} else {
-				// Else, drop one char from `contains`, as all matches match only one char
-				State.LastMatchedChar = State.Contains[0];
-				State.Contains = std::string_view(State.Contains.data() + 1);
-			}
-
+		auto matchedNext = GetMappings(State.Contains, State.In);
+		if (matchedNext.size() != 0) {
 			for (auto it = matchedNext.begin();it != matchedNext.end();++it) {
+				if (it->first.length() == State.Contains.length())
+					return std::pair(State.StartingIndex, State.MatchedChars + it->second.length());
+
 				MatchingStack.push(MatchingState(
-					std::string_view(State.In.data() + *it),
-					State.Contains, // We already dropped on char from this
+					std::string_view(State.In.data() + it->second.length()),
+					std::string_view(State.Contains.data() + it->first.length()),
 					State.StartingIndex,
-					State.MatchedChars + *it,
-					State.LastMatchedChar // This one is already set earlier
+					State.MatchedChars + it->second.length(),
+					std::string_view(State.Contains.data(), it->first.length())
 				));
 			}
 		} else {
 			if (MatchingStack.empty())
-				return std::make_tuple(-1, -1);
+				return std::pair(-1, -1);
 		}
 		State = MatchingStack.top();
 		MatchingStack.pop();
 	}
 }
 
-std::tuple<int, int> ConfusableMatcher::StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
+std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	for (auto x = StartIndex;x < In.length();x++) {
-		auto matched = GetMatchedLengthsSingleChar(std::string_view(In.data() + x), Contains[0]);
-		if (matched[0] == -1)
+		auto matched = GetMappings(Contains, std::string_view(In.data() + x));
+		if (matched.size() == 0)
 			continue;
 
-		if (Contains.length() == 1 && matched[0] == In.length())
-			return std::make_tuple(0, In.length());
-
 		for (auto it = matched.begin();it != matched.end();++it) {
-			auto contains = StringContainsInner(MatchingState(
-				std::string_view(In.data() + x + *it),
-				Contains.data() + 1,
+			if (it->first.length() == Contains.length())
+				return std::pair(x, it->second.length());
+
+			auto contains = IndexOfInner(MatchingState(
+				std::string_view(In.data() + x + it->second.length()),
+				std::string_view(Contains.data() + it->first.length()),
 				x,
-				*it,
-				Contains[0]
+				it->second.length(),
+				std::string_view(Contains.data(), it->first.length())
 			), Mode, Skip, MatchRepeating);
 
-			if (std::get<0>(contains) == -1)
+			if (contains.first == -1)
 				continue;
 
 			return contains;
 		}
 	}
-	return std::make_tuple(-1, -1);
+	return std::pair(-1, -1);
 }
 
-std::tuple<int, int> ConfusableMatcher::StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
+std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	assert(StartIndex <= In.length() && StartIndex >= 0);
-	return StringContainsFromView(std::string_view(In), std::string_view(Contains), Mode, Skip, MatchRepeating, StartIndex);
+	return IndexOfFromView(std::string_view(In), std::string_view(Contains), Mode, Skip, MatchRepeating, StartIndex);
 }
 
 ConfusableMatcher::~ConfusableMatcher()
@@ -255,7 +343,10 @@ ConfusableMatcher::~ConfusableMatcher()
 	if (TheMap->size() != 0) {
 		for (auto it = TheMap->begin();it != TheMap->end(); ++it) {
 			for (auto it2 = it->second->begin();it2 != it->second->end(); ++it2) {
-				delete it2->second;
+				for (auto it3 = (*it2)->second->begin();it3 != (*it2)->second->end(); ++it3) {
+					delete it3->second;
+				}
+				delete (*it2)->second;
 			}
 			delete it->second;
 		}

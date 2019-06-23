@@ -8,7 +8,7 @@ extern "C" {
 
 	typedef struct _CMKV
 	{
-		char Key;
+		char *Key;
 		char *Value;
 	} CMKV;
 
@@ -22,6 +22,6 @@ extern "C" {
 	__declspec(dllexport) CMListHandle ConstructIgnoreList(char *List, int Count);
 	__declspec(dllexport) void FreeIgnoreList(CMListHandle List);
 	__declspec(dllexport) uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList);
-	__declspec(dllexport) bool AddMapping(CMHandle CM, char Key, char *Value, bool CheckValueDuplicate);
-	__declspec(dllexport) bool RemoveMapping(CMHandle CM, char Key, char *Value);
+	__declspec(dllexport) bool AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate);
+	__declspec(dllexport) bool RemoveMapping(CMHandle CM, char *Key, char *Value);
 }

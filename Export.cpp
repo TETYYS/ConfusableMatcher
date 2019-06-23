@@ -7,11 +7,11 @@
 
 CMHandle InitConfusableMatcher(CMMap Map)
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
 	for (auto x = 0;x < Map.Size;x++) {
 		auto kv = Map.Kv[x];
-		map.push_back(std::make_tuple(kv.Key, std::string(kv.Value)));
+		map.push_back(std::pair(std::string(kv.Key), std::string(kv.Value)));
 	}
 
 	auto matcher = new ConfusableMatcher(map);
@@ -52,12 +52,12 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 	return ret[0] | ((uint64_t)ret[1] << 32);
 }
 
-bool AddMapping(CMHandle CM, char Key, char *Value, bool CheckValueDuplicate)
+bool AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate)
 {
 	return ((ConfusableMatcher *)CM)->AddMapping(Key, Value, CheckValueDuplicate);
 }
 
-bool RemoveMapping(CMHandle CM, char Key, char *Value)
+bool RemoveMapping(CMHandle CM, char *Key, char *Value)
 {
 	return ((ConfusableMatcher *)CM)->RemoveMapping(Key, Value);
 }

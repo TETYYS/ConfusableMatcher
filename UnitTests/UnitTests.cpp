@@ -9,114 +9,114 @@ using namespace std;
 
 void Test1()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('N', "T"));
-	map.push_back(std::make_tuple('I', "E"));
-	map.push_back(std::make_tuple('C', "S"));
-	map.push_back(std::make_tuple('E', "T"));
+	map.push_back(std::pair("N", "T"));
+	map.push_back(std::pair("I", "E"));
+	map.push_back(std::pair("C", "S"));
+	map.push_back(std::pair("E", "T"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("TEST", "NICE", RECURSIVE, { }, false, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 4);
+	auto res = matcher.IndexOf("TEST", "NICE", RECURSIVE, { }, false, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 4);
 }
 
 void Test2()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('V', "VA"));
-	map.push_back(std::make_tuple('V', "VO"));
+	map.push_back(std::pair("V", "VA"));
+	map.push_back(std::pair("V", "VO"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("VV", "VAVOVAVO", RECURSIVE, { }, false, 0);
-	ASSERT_EQUAL(std::get<0>(res), -1);
-	ASSERT_EQUAL(std::get<1>(res), -1);
-	res = matcher.StringContains("VAVOVAVO", "VV", RECURSIVE, { }, false, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT(std::get<1>(res) == 3 || std::get<1>(res) == 4);
-	res = matcher.StringContains("VAVOVAVO", "VV", RECURSIVE, { }, false, 4);
-	ASSERT_EQUAL(std::get<0>(res), 4);
-	ASSERT(std::get<1>(res) == 3 || std::get<1>(res) == 4);
-	res = matcher.StringContains("VAVOVAVO", "VV", RECURSIVE, { }, false, 2);
-	ASSERT_EQUAL(std::get<0>(res), 2);
-	ASSERT(std::get<1>(res) == 3 || std::get<1>(res) == 4);
-	res = matcher.StringContains("VAVOVAVO", "VV", RECURSIVE, { }, false, 3);
-	ASSERT_EQUAL(std::get<0>(res), 4);
-	ASSERT(std::get<1>(res) == 3 || std::get<1>(res) == 4);
+	auto res = matcher.IndexOf("VV", "VAVOVAVO", RECURSIVE, { }, false, 0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT(res.second == 3 || res.second == 4);
+	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 4);
+	ASSERT_EQUAL(res.first, 4);
+	ASSERT(res.second == 3 || res.second == 4);
+	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 2);
+	ASSERT_EQUAL(res.first, 2);
+	ASSERT(res.second == 3 || res.second == 4);
+	res = matcher.IndexOf("VAVOVAVO", "VV", RECURSIVE, { }, false, 3);
+	ASSERT_EQUAL(res.first, 4);
+	ASSERT(res.second == 3 || res.second == 4);
 }
 
 void Test3()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('A', "\x02\x03"));
-	map.push_back(std::make_tuple('B', "\xFA\xFF"));
+	map.push_back(std::pair("A", "\x02\x03"));
+	map.push_back(std::pair("B", "\xFA\xFF"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("\x02\x03\xFA\xFF", "AB", RECURSIVE, { }, false, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 4);
+	auto res = matcher.IndexOf("\x02\x03\xFA\xFF", "AB", RECURSIVE, { }, false, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 4);
 }
 
 void Test4()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('S', "$"));
-	map.push_back(std::make_tuple('D', "[)"));
+	map.push_back(std::pair("S", "$"));
+	map.push_back(std::pair("D", "[)"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("A__ _ $$$[)D", "ASD", RECURSIVE, { "_", " " }, true, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 11);
+	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", RECURSIVE, { "_", " " }, true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 11);
 }
 
 void Test5()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('N', "/\\/"));
-	map.push_back(std::make_tuple('N', "/\\"));
-	map.push_back(std::make_tuple('I', "/"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("N", "/\\"));
+	map.push_back(std::pair("I", "/"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("/\\/CE", "NICE", RECURSIVE, { }, false, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 5);
+	auto res = matcher.IndexOf("/\\/CE", "NICE", RECURSIVE, { }, false, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 5);
 }
 
 void Test6()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('N', "/\\/"));
-	map.push_back(std::make_tuple('V', "\\/"));
-	map.push_back(std::make_tuple('I', "/"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("V", "\\/"));
+	map.push_back(std::pair("I", "/"));
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains("I/\\/AM", "INAN", RECURSIVE, { }, true, 0);
-	ASSERT_EQUAL(std::get<0>(res), -1);
-	ASSERT_EQUAL(std::get<1>(res), -1);
-	res = matcher.StringContains("I/\\/AM", "INAM", RECURSIVE, { }, true, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 6);
-	res = matcher.StringContains("I/\\/AM", "IIVAM", RECURSIVE, { }, true, 0);
-	ASSERT_EQUAL(std::get<0>(res), 0);
-	ASSERT_EQUAL(std::get<1>(res), 6);
+	auto res = matcher.IndexOf("I/\\/AM", "INAN", RECURSIVE, { }, true, 0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+	res = matcher.IndexOf("I/\\/AM", "INAM", RECURSIVE, { }, true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 6);
+	res = matcher.IndexOf("I/\\/AM", "IIVAM", RECURSIVE, { }, true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 6);
 }
 
-std::vector<std::tuple<char, std::string>> GetDefaultMap()
+std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::make_tuple('N', "/[()[]]/"));
-	map.push_back(std::make_tuple('N', "\U000000f1"));
-	map.push_back(std::make_tuple('N', "|\\|"));
-	map.push_back(std::make_tuple('N', "\U00000245\U00000002f"));
-	map.push_back(std::make_tuple('N', "/IJ"));
-	map.push_back(std::make_tuple('N', "/|/"));
+	map.push_back(std::pair("N", "/[()[]]/"));
+	map.push_back(std::pair("N", "\U000000f1"));
+	map.push_back(std::pair("N", "|\\|"));
+	map.push_back(std::pair("N", "\U00000245\U00000002f"));
+	map.push_back(std::pair("N", "/IJ"));
+	map.push_back(std::pair("N", "/|/"));
 
 	std::vector<std::string> ns = { "\U000004c5", "\U000003a0", "\U00000418", "\U0001d427", "\U0001d45b", "\U0001d48f", "\U0001d4c3", "\U0001d4f7", "\U0001d52b", "\U0001d55f", "\U0001d593", "\U0001d5c7", "\U0001d5fb", "\U0001d62f", "\U0001d663", "\U0001d697", "\U00000578", "\U0000057c", "\U0000ff2e", "\U00002115", "\U0001d40d", "\U0001d441", "\U0001d475", "\U0001d4a9", "\U0001d4dd", "\U0001d511", "\U0001d579", "\U0001d5ad", "\U0001d5e1", "\U0001d615", "\U0001d649", "\U0001d67d", "\U0000039d", "\U0001d6b4", "\U0001d6ee", "\U0001d728", "\U0001d762", "\U0001d79c", "\U0000a4e0", "\U00000143", "\U00000145", "\U00000147", "\U0000014b", "\U0000019d", "\U000001f8", "\U00000220", "\U0000039d", "\U00001e44", "\U00001e46", "\U00001e48", "\U00001e4a", "\U000020a6", "\U00001f20", "\U00001f21", "\U00001f22", "\U00001f23", "\U00001f24", "\U00001f25", "\U00001f26", "\U00001f27", "\U00001f74", "\U00001f75", "\U00001f90", "\U00001f91", "\U00001f92", "\U00001f93", "\U00001f94", "\U00001f95", "\U00001f96", "\U00001f97", "\U00001fc2", "\U00001fc3", "\U00001fc4", "\U00001fc6", "\U00001fc7", "\U000000f1", "\U00000144", "\U00000146", "\U00000148", "\U00000149", "\U0000014a", "\U0000019e", "\U000001f9", "\U00000235", "\U00000272", "\U00000273", "\U00000274", "\U00001d70", "\U00001d87", "\U00001e45", "\U00001e47", "\U00001e49", "\U00001e4b" };
 	std::vector<std::string> is = { "\U00001ec8", "\U00000079", "\U00000069", "\U00000031", "\U0000007c", "\U0000006c", "\U0000006a", "\U00000021", "\U0000002f", "\U0000005c\U0000005c", "\U0000ff49", "\U000000a1", "\U00002170", "\U00002139", "\U00002148", "\U0001d422", "\U0001d456", "\U0001d48a", "\U0001d4be", "\U0001d4f2", "\U0001d526", "\U0001d55a", "\U0001d58e", "\U0001d5c2", "\U0001d5f6", "\U0001d62a", "\U0001d65e", "\U0001d692", "\U00000131", "\U0001d6a4", "\U0000026a", "\U00000269", "\U000003b9", "\U00001fbe", "\U0000037a", "\U0001d6ca", "\U0001d704", "\U0001d73e", "\U0001d778", "\U0001d7b2", "\U00000456", "\U000024be", "\U0000a647", "\U000004cf", "\U0000ab75", "\U000013a5", "\U00000263", "\U00001d8c", "\U0000ff59", "\U0001d432", "\U0001d466", "\U0001d49a", "\U0001d4ce", "\U0001d502", "\U0001d536", "\U0001d56a", "\U0001d59e", "\U0001d5d2", "\U0001d606", "\U0001d63a", "\U0001d66e", "\U0001d6a2", "\U0000028f", "\U00001eff", "\U0000ab5a", "\U000003b3", "\U0000213d", "\U0001d6c4", "\U0001d6fe", "\U0001d738", "\U0001d772", "\U0001d7ac", "\U00000443", "\U000004af", "\U000010e7", "\U0000ff39", "\U0001d418", "\U0001d44c", "\U0001d480", "\U0001d4b4", "\U0001d4e8", "\U0001d51c", "\U0001d550", "\U0001d584", "\U0001d5b8", "\U0001d5ec", "\U0001d620", "\U0001d654", "\U0001d688", "\U000003a5", "\U000003d2", "\U0001d6bc", "\U0001d6f6", "\U0001d730", "\U0001d76a", "\U0001d7a4", "\U00002ca8", "\U00000423", "\U000004ae", "\U000013a9", "\U000013bd", "\U0000a4ec", "\U00000176", "\U00000178", "\U000001b3", "\U00000232", "\U0000024e", "\U0000028f", "\U00001e8e", "\U00001ef2", "\U00001ef4", "\U00001ef6", "\U00001ef8", "\U0000ff39", "\U000000cc", "\U000000cd", "\U000000ce", "\U000000cf", "\U00000128", "\U0000012a", "\U0000012c", "\U0000012e", "\U00000130", "\U00000196", "\U00000197", "\U000001cf", "\U00000208", "\U0000020a", "\U0000026a", "\U0000038a", "\U00000390", "\U00000399", "\U000003aa", "\U00000406", "\U0000040d", "\U00000418", "\U00000419", "\U000004e2", "\U000004e4", "\U00001e2c", "\U00001e2e", "\U00001ec8", "\U00001eca", "\U00001fd8", "\U00001fd9", "\U00002160", "\U0000ff29", "\U000030a7", "\U000030a8", "\U0000ff6a", "\U0000ff74", "\U000000ec", "\U000000ed", "\U000000ee", "\U000000ef", "\U00000129", "\U0000012b", "\U0000012d", "\U0000012f", "\U00000131", "\U000001d0", "\U00000209", "\U0000020b", "\U00000268", "\U00000269", "\U00000365", "\U000003af", "\U000003ca", "\U00000438", "\U00000439", "\U00000456", "\U0000045d", "\U000004e3", "\U000004e5", "\U00001e2d", "\U00001e2f", "\U00001ec9", "\U00001ecb", "\U00001f30", "\U00001f31", "\U00001f32", "\U00001f33", "\U00001f34", "\U00001f35", "\U00001f36", "\U00001f37", "\U00001f76", "\U00001f77", "\U00001fbe", "\U00001fd0", "\U00001fd1", "\U00001fd2", "\U00001fd3", "\U00001fd6", "\U00001fd7", "\U0000ff49", "\U00001d85", "\U00001e37", "\U00001e39", "\U00001e3b", "\U00001e3d", "\U000000fd", "\U000000ff", "\U00000177", "\U000001b4", "\U00000233", "\U0000024f", "\U0000028e", "\U000002b8", "\U00001e8f", "\U00001e99", "\U00001ef3", "\U00001ef5", "\U00001ef7", "\U00001ef9", "\U0000ff59" };
@@ -129,11 +129,11 @@ std::vector<std::tuple<char, std::string>> GetDefaultMap()
 	for (auto x = 0;x < 5;x++) {
 		for (auto chr : s[x]) {
 			switch (x) {
-				case 0: map.push_back(std::make_tuple('N', chr)); break;
-				case 1: map.push_back(std::make_tuple('I', chr)); break;
-				case 2: map.push_back(std::make_tuple('G', chr)); break;
-				case 3: map.push_back(std::make_tuple('E', chr)); break;
-				case 4: map.push_back(std::make_tuple('R', chr)); break;
+				case 0: map.push_back(std::pair("N", chr)); break;
+				case 1: map.push_back(std::pair("I", chr)); break;
+				case 2: map.push_back(std::pair("G", chr)); break;
+				case 3: map.push_back(std::pair("E", chr)); break;
+				case 4: map.push_back(std::pair("R", chr)); break;
 			}
 		}
 	}
@@ -149,10 +149,10 @@ std::vector<std::tuple<char, std::string>> GetDefaultMap()
 	auto matcher = ConfusableMatcher(map);
 	int iinc = 0;
 	auto start = std::chrono::high_resolution_clock::now();
-	std::tuple<int, int> res;
+	std::pair<int, int> res;
 	for (auto x = 0;x < 50000;x++) {
-		res = matcher.StringContains(in, "NIGGER", RECURSIVE, { '_', '%', '$' }, true, 0);
-		iinc += std::get<0>(res);
+		res = matcher.IndexOf(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
+		iinc += res.first;
 	}
 	auto finish = std::chrono::high_resolution_clock::now();
 
@@ -163,8 +163,8 @@ std::vector<std::tuple<char, std::string>> GetDefaultMap()
 	OutputDebugStringA(outp.str().data());
 
 	ASSERT(
-		(std::get<0>(res) == 64 && std::get<1>(res) == 57) ||
-		(std::get<0>(res) == 89 && std::get<1>(res) == 32));
+		(res.first == 64 && res.second == 57) ||
+		(res.first == 89 && res.second == 32));
 }*/
 
 void Test7()
@@ -173,11 +173,11 @@ void Test7()
 
 	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
+	auto res = matcher.IndexOf(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
 
 	ASSERT(
-		(std::get<0>(res) == 64 && std::get<1>(res) == 57) ||
-		(std::get<0>(res) == 89 && std::get<1>(res) == 32));
+		(res.first == 64 && res.second == 57) ||
+		(res.first == 89 && res.second == 32));
 }
 
 void LidlNormalizerTests()
@@ -185,16 +185,16 @@ void LidlNormalizerTests()
 	auto map = GetDefaultMap();
 
 	// Additional test data
-	std::vector<char> keys = { 
-		'A', 'A', 'A', 'A', 'B', 'U', 'U', 'O', 'O', 'A', 'A',
-		'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
-		'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-		'U', 'A', ' ', 'S', 'M', 'O', 'L', 'N', 'A', 'T', 'I', 'O', 'N', 'N', 'I', 'G', 'N', 'I'
+	std::vector<std::string> keys = { 
+		"A", "A", "A", "A", "B", "U", "U", "O", "O", "A", "A",
+		"A", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y",
+		"Z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0",
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+		"U", "A", " ", "S", "M", "O", "L", "N", "A", "T", "I", "O", "N", "N", "I", "G", "N", "I"
 	};
 	std::vector<std::string> vals = {
 		"\U00000105", "\U0000ab31", "\U00001d43", "\U000000e5", "\U0000249d", "\U000000fc", "\U000000dc", "\U000000f6", "\U000000d6", "\U000000e4", "\U000000c4",
@@ -202,7 +202,7 @@ void LidlNormalizerTests()
 	};
 	
 	for (auto x = 0;x < keys.size();x++)
-		map.push_back(std::make_tuple(keys[x], vals[x]));
+		map.push_back(std::pair(keys[x], vals[x]));
 
 	auto matcher = ConfusableMatcher(map);
 
@@ -233,26 +233,29 @@ void LidlNormalizerTests()
 		std::vector<const char*> chr;
 		std::vector<int> eq;
 		std::tie(chr, eq) = entry;
-		auto res = matcher.StringContains(chr[0], chr[1], RECURSIVE, { }, true, 0);
-		ASSERT_EQUAL(std::get<0>(res), eq[0]);
-		ASSERT_EQUAL(std::get<1>(res), eq[1]);
+		auto res = matcher.IndexOf(chr[0], chr[1], RECURSIVE, { }, true, 0);
+		if (res.second != eq[1]) {
+			ASSERT_EQUAL(1, 1);
+		}
+		ASSERT_EQUAL(res.first, eq[0]);
+		ASSERT_EQUAL(res.second, eq[1]);
 	}
 }
 
 void Test8()
 {
-	std::vector<std::tuple<char, std::string>> map;
+	std::vector<std::pair<std::string, std::string>> map;
 
 	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.StringContains(
+	auto res = matcher.IndexOf(
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890",
 		RECURSIVE,
 		{ "\U00000332", "\U00000305", "[", "]" },
 		false,
 		0);
-	ASSERT_EQUAL(std::get<0>(res), 5);
-	ASSERT_EQUAL(std::get<1>(res), 397);
+	ASSERT_EQUAL(res.first, 5);
+	ASSERT_EQUAL(res.second, 397);
 }
 
 int main()

@@ -31,40 +31,51 @@ struct MatchingState
 	std::string_view Contains;
 	int StartingIndex;
 	int MatchedChars;
-	char LastMatchedChar;
+	std::string_view LastMatched;
 
-	MatchingState(std::string_view In, std::string_view Contains, int StartingIndex, int MatchedChars, char LastMatchedChar)
+	MatchingState(std::string_view In, std::string_view Contains, int StartingIndex, int MatchedChars, std::string_view LastMatched)
 	{
 		this->In = In;
 		this->Contains = Contains;
 		this->StartingIndex = StartingIndex;
 		this->MatchedChars = MatchedChars;
-		this->LastMatchedChar = LastMatchedChar;
+		this->LastMatched = LastMatched;
 	}
 };
 
 class ConfusableMatcher
 {
 	private:
-	google::dense_hash_map<char, google::dense_hash_map<char, std::vector<std::string>*>*>
+	google::dense_hash_map<
+		char, // Key first char
+		std::vector<
+			std::pair<
+				std::string, // Key whole
+				google::dense_hash_map<
+					char, // Value first char
+					std::vector<std::string>* // Values whole
+				>*
+			>*
+		>*
+	>
 		*TheMap;
-	std::vector<std::string>
-		*GetValues(char Key, char ValFirstPart);
-	std::vector<int>
-		GetMatchedLengthsSingleChar(std::string_view In, char Match);
-	std::tuple<int, int>
-		StringContainsFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
-	std::tuple<int, int>
-		StringContainsInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating);
+	std::vector<std::pair<std::string, std::string>>
+		GetMappings(std::string_view Key, std::string_view Value);
+	/*std::vector<std::pair<int, int>>
+		GetMatchedLengths(std::string_view In, std::string_view Contains);*/
+	std::pair<int, int>
+		IndexOfFromView(std::string_view In, std::string_view Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
+	std::pair<int, int>
+		IndexOfInner(MatchingState State, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating);
 
 	public:
-	ConfusableMatcher(std::vector<std::tuple<char, std::string>> InputMap);
+	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap);
 	bool
-		AddMapping(char Key, std::string Value, bool CheckValueDuplicate);
+		AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
 	bool
-		RemoveMapping(char Key, std::string Value);
-	std::tuple<int, int>
-		StringContains(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex = 0);
+		RemoveMapping(std::string Key, std::string Value);
+	std::pair<int, int>
+		IndexOf(std::string In, std::string Contains, MATCHING_MODE Mode, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex = 0);
 
 	~ConfusableMatcher();
 };
