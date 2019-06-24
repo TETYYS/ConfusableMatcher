@@ -1,5 +1,5 @@
 # ConfusableMatcher
-Provides an IndexOf method for strings with while using string (key) to string (value) substring mapping.
+Provides an `IndexOf` method for strings which uses string (key) to string (value) substring mapping.
 
 # Example
 
