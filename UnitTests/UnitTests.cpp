@@ -4,9 +4,6 @@
 #include <cute/cute_runner.h>
 #include <cute/ide_listener.h>
 
-using namespace std;
-
-
 void Test1()
 {
 	std::vector<std::pair<std::string, std::string>> map;
@@ -447,6 +444,30 @@ void Test14()
 	ASSERT_EQUAL(res.second, -1);
 }
 
+void Test15()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map);
+	ASSERT_THROWS(matcher.AddMapping("", "?", false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping("?", "", false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping("", "", false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x00", 1), "?", false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping("?", std::string("\x00", 1), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x01", 1), "?", false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping("?", std::string("\x01", 1), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x00", 1), std::string("\x01", 1), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x00", 1), std::string("\x00", 1), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x01", 1), std::string("\x00", 1), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x01", 1), std::string("\x01", 1), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x01\x00", 2), std::string("\x00\x01", 2), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("A\x00", 2), std::string("\x00""A", 2), false), std::exception);
+	ASSERT_THROWS(matcher.AddMapping(std::string("\x01\x00", 2), std::string("\x00\x01", 2), false), std::exception);
+	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x00", 2), std::string("A\x01", 2), false), true);
+	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x01", 2), std::string("A\x00", 2), false), true);
+	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x00", 2), std::string("A\x00", 2), false), true);
+	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x01", 2), std::string("A\x01", 2), false), true);
+}
+
 int main()
 {
 	cute::suite s;
@@ -465,6 +486,7 @@ int main()
 	s.push_back(CUTE(Test12));
 	s.push_back(CUTE(Test13));
 	s.push_back(CUTE(Test14));
+	s.push_back(CUTE(Test15));
 	cute::ide_listener lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

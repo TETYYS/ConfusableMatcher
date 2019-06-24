@@ -99,6 +99,15 @@ bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 
 bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate)
 {
+	if (Key.length() == 0)
+		throw std::exception("Key.length() == 0");
+	if (Value.length() == 0)
+		throw std::exception("Value.length() == 0");
+	if (Key[0] == '\x00' || Key[0] == '\x01')
+		throw std::exception("Key cannot begin with \x00 or \x01");
+	if (Value[0] == '\x00' || Value[0] == '\x01')
+		throw std::exception("Value cannot begin with \x00 or \x01");
+
 	std::vector<
 		std::pair<
 			std::string, // Key whole

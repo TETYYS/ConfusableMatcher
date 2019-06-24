@@ -3,14 +3,20 @@
 #include <codecvt>
 #include <string_view>
 #include <unordered_set>
-#include <iterator>
+#include <vector>
 
 namespace google
 {
 	template<class T>
 		class libc_allocator_with_realloc;
 
-	template<class Key, class T, class HashFcn = stdext::hash_compare<Key>,
+#ifdef WIN32
+#define HASHCOMPARE_CLS stdext::hash_compare
+#else
+#define HASHCOMPARE_CLS std::hash
+#endif
+
+	template<class Key, class T, class HashFcn = std::hash<Key>,
 		class EqualKey = std::equal_to<Key>,
 		class Alloc = libc_allocator_with_realloc<std::pair<const Key, T>>>
 		class dense_hash_map;
@@ -38,7 +44,7 @@ constexpr int STACKVECTOR_SIZE = 16;
 template<class T>
 struct StackVector
 {
-	int CurSize;
+	int CurSize = 0;
 	bool IsStack = true;
 
 public:
