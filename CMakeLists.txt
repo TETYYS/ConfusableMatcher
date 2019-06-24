@@ -2,7 +2,6 @@
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.8)
-
 project(ConfusableMatcher)
 
 enable_testing()
@@ -30,5 +29,22 @@ add_executable(RunUnitTests "UnitTests/UnitTests.cpp" "UnitTests/UnitTests.h")
 
 set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD 17)
 set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD_REQUIRED ON)
+
+if (NOT WIN32)
+	add_custom_target(
+		SparsehashConfig
+		COMMAND ./configure
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/sparsehash
+	)
+
+	add_custom_target(
+		SparsehashBuild
+		COMMAND make
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/sparsehash
+	)
+
+	add_dependencies(ConfusableMatcher SparsehashConfig)
+	add_dependencies(ConfusableMatcher SparsehashBuild)
+endif()
 
 target_link_libraries(RunUnitTests ConfusableMatcher)
