@@ -18,14 +18,17 @@ endif()
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
-include_directories(ConfusableMatcher "sparsehash/src" "sparsehash/src/windows")
-include_directories(UnitTests "UnitTests/CUTE" ".")
-add_test(UnitTests UnitTests)
+include_directories(ConfusableMatcher "sparsehash/src")
+if (WIN32)
+	include_directories(ConfusableMatcher "sparsehash/src/windows")
+endif()
+include_directories(RunUnitTests "UnitTests/CUTE" ".")
+add_test(RunUnitTests RunUnitTests)
 
 add_library(ConfusableMatcher STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h")
-add_executable(UnitTests "UnitTests/UnitTests.cpp" "UnitTests/UnitTests.h")
+add_executable(RunUnitTests "UnitTests/UnitTests.cpp" "UnitTests/UnitTests.h")
 
 set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD 17)
 set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD_REQUIRED ON)
 
-target_link_libraries(UnitTests ConfusableMatcher)
+target_link_libraries(RunUnitTests ConfusableMatcher)

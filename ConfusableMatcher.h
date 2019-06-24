@@ -1,20 +1,16 @@
 ﻿#pragma once
 
 #include <codecvt>
-#include <string_view>
 #include <unordered_set>
 #include <vector>
 
 #ifdef WIN32
+	#include <string_view>
 	typedef std::string_view CMStringView;
 #else
+	#include <experimental/string_view>
 	typedef std::experimental::string_view CMStringView;
 #endif
-
-namespace google
-{
-	template<class T>
-		class libc_allocator_with_realloc;
 
 #ifdef WIN32
 	#define HASHCOMPARE_CLS stdext::hash_compare
@@ -22,9 +18,12 @@ namespace google
 	#define HASHCOMPARE_CLS std::hash
 #endif
 
-	template<class Key, class T, class HashFcn = HASHCOMPARE_CLS<Key>,
-		class EqualKey = std::equal_to<Key>,
-		class Alloc = libc_allocator_with_realloc<std::pair<const Key, T>>>
+namespace google
+{
+	template<class T>
+		class libc_allocator_with_realloc;
+
+	template<class Key, class T, class HashFcn, class EqualKey, class Alloc>
 		class dense_hash_map;
 };
 
@@ -89,17 +88,26 @@ public:
 class ConfusableMatcher
 {
 	private:
+
+	typedef google::dense_hash_map<
+		char, // Value first char
+		std::vector<std::string>*, // Values whole
+		HASHCOMPARE_CLS<char>,
+		std::equal_to<char>,
+		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::string>*>>
+	> CMInnerHashMap;
+
 	google::dense_hash_map<
 		char, // Key first char
 		std::vector<
 			std::pair<
 				std::string, // Key whole
-				google::dense_hash_map<
-					char, // Value first char
-					std::vector<std::string>* // Values whole
-				>*
+				CMInnerHashMap*
 			>*
-		>*
+		>*,
+		HASHCOMPARE_CLS<char>,
+		std::equal_to<char>,
+		google::libc_allocator_with_realloc<std::pair<const char, CMInnerHashMap>>
 	>
 		*TheMap;
 	void

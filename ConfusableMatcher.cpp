@@ -1,7 +1,7 @@
 ﻿#include <iostream>
 #include <chrono>
 #include <stack>
-#include <sstream>
+#include <stdexcept>
 
 #include <sparsehash/dense_hash_map>
 using google::dense_hash_map;
@@ -98,13 +98,13 @@ bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate)
 {
 	if (Key.length() == 0)
-		throw std::exception("Key.length() == 0");
+		throw std::runtime_error("Key.length() == 0");
 	if (Value.length() == 0)
-		throw std::exception("Value.length() == 0");
+		throw std::runtime_error("Value.length() == 0");
 	if (Key[0] == '\x00' || Key[0] == '\x01')
-		throw std::exception("Key cannot begin with \x00 or \x01");
+		throw std::runtime_error("Key cannot begin with \x00 or \x01");
 	if (Value[0] == '\x00' || Value[0] == '\x01')
-		throw std::exception("Value cannot begin with \x00 or \x01");
+		throw std::runtime_error("Value cannot begin with \x00 or \x01");
 
 	std::vector<
 		std::pair<
@@ -148,11 +148,11 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 		// Value dictionary doesn't exist
 		valDict = new google::dense_hash_map<
 			char, // Value first char
-			std::vector<std::string> * // Values whole
+			std::vector<std::string>* // Values whole
 		>;
 		valDict->set_empty_key('\x0');
 		valDict->set_deleted_key('\x1');
-		keyArr->push_back(new std::pair(Key, valDict));
+		keyArr->push_back(new std::pair<std::string, google::dense_hash_map<char, std::vector<std::string>*>*>(Key, valDict));
 	}
 
 	std::vector<std::string> *valArr;
@@ -183,12 +183,12 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 		std::vector<
 			std::pair<
 				std::string, // Key whole
-				google::dense_hash_map<
-					char, // Value first char
-					std::vector<std::string>* // Values whole
-				>*
+				CMInnerHashMap*
 			>*
-		>*
+		>*,
+		HASHCOMPARE_CLS<char>,
+		std::equal_to<char>,
+		google::libc_allocator_with_realloc<std::pair<const char, CMInnerHashMap>>
 	>;
 	TheMap->set_empty_key(U'\x0');
 	TheMap->set_deleted_key(U'\x1');
@@ -228,7 +228,7 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 
 			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();it2++) {
 				if (it2->length() <= Value.length() && *it2 == CMStringView(Value.data(), it2->length()))
-					Storage.Push(std::pair((*it)->first, *it2)); // Whole value found
+					Storage.Push(std::pair<std::string, std::string>((*it)->first, *it2)); // Whole value found
 			}
 		}
 	}
@@ -247,7 +247,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 		if (State.In.length() == 0) {
 			// Current state ate all of `In` and we have no other state to get from stack
 			if (matchingStack.empty())
-				return std::pair(-1, -1);
+				return std::pair<int, int>(-1, -1);
 
 			// This happens when there are still matches in stack but current state ate all of `In`
 			State = matchingStack.top();
@@ -316,7 +316,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
 					// If we were about to eat all of `Contains`, that means we found the whole thing
 					if (mappingsStorage.Stack[x].first.length() == State.Contains.length())
-						return std::pair(State.StartingIndex, State.MatchedChars + mappingsStorage.Stack[x].second.length());
+						return std::pair<int, int>(State.StartingIndex, State.MatchedChars + mappingsStorage.Stack[x].second.length());
 
 					// Push new path
 					matchingStack.push(MatchingState(
@@ -331,7 +331,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 				// Heap ver.
 				for (auto it = mappingsStorage.Heap.begin();it != mappingsStorage.Heap.end();it++) {
 					if (it->first.length() == State.Contains.length())
-						return std::pair(State.StartingIndex, State.MatchedChars + it->second.length());
+						return std::pair<int, int>(State.StartingIndex, State.MatchedChars + it->second.length());
 
 					matchingStack.push(MatchingState(
 						CMStringView(State.In.data() + it->second.length()),
@@ -345,7 +345,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 		} else {
 			// We didn't put any new paths into stack so check if we depleted all paths
 			if (matchingStack.empty())
-				return std::pair(-1, -1);
+				return std::pair<int, int>(-1, -1);
 		}
 
 		// Fetch newest path --- this includes last new path from next substring matching
@@ -359,7 +359,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 	StackVector<std::pair<std::string, std::string>> MappingsStorage;
 
 	if (Contains.length() == 0)
-		return std::pair(0, 0);
+		return std::pair<int, int>(0, 0);
 
 	/*
 	 * No need to check for `In` length, loop never executes due it's length and returns a proper result:
@@ -378,7 +378,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 			for (auto i = 0;i < MappingsStorage.CurSize;i++) {
 				// Already found the whole thing when searching for beginning
 				if (MappingsStorage.Stack[i].first.length() == Contains.length())
-					return std::pair(x, MappingsStorage.Stack[i].second.length());
+					return std::pair<int, int>(x, MappingsStorage.Stack[i].second.length());
 
 				auto contains = IndexOfInner(MatchingState(
 					CMStringView(In.data() + x + MappingsStorage.Stack[i].second.length()),
@@ -397,7 +397,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 			// Heap ver.
 			for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();it++) {
 				if (it->first.length() == Contains.length())
-					return std::pair(x, it->second.length());
+					return std::pair<int, int>(x, it->second.length());
 
 				auto contains = IndexOfInner(MatchingState(
 					CMStringView(In.data() + x + it->second.length()),
@@ -414,7 +414,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 			}
 		}
 	}
-	return std::pair(-1, -1);
+	return std::pair<int, int>(-1, -1);
 }
 
 std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
