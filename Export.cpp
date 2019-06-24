@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-CMHandle InitConfusableMatcher(CMMap Map)
+CMHandle InitConfusableMatcher(CMMap Map, bool AddDefaultValues)
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
@@ -23,31 +23,33 @@ void FreeConfusableMatcher(CMHandle In)
 	delete (ConfusableMatcher*)In;
 }
 
-CMListHandle ConstructIgnoreList(char *List, int Count)
+CMListHandle ConstructIgnoreList(char **List, int Count)
 {
-	auto ignore = new std::unordered_set<char32_t>;
+	auto ignore = new std::unordered_set<std::string>;
 	for (auto x = 0;x < Count;x++) {
-		ignore->insert(List[x]);
+		ignore->insert(std::string(List[x]));
 	}
 	return ignore;
 }
 
 void FreeIgnoreList(CMListHandle List)
 {
-	delete (std::unordered_set<char>*)List;
+	delete (std::unordered_set<std::string>*)List;
 }
 
 uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList)
 {
-	auto ignore = (std::unordered_set<char>*)IgnoreList;
+	auto ignore = (std::unordered_set<std::string>*)IgnoreList;
 
 	int ret[2];
-	/*std::tie(ret[0], ret[1]) = ((ConfusableMatcher *)CM)->StringContains(
+	auto rawRet = ((ConfusableMatcher*)CM)->IndexOf(
 		In,
 		Contains,
 		*ignore,
 		MatchRepeating,
-		StartIndex);*/
+		StartIndex);
+	ret[0] = rawRet.first;
+	ret[1] = rawRet.second;
 
 	return ret[0] | ((uint64_t)ret[1] << 32);
 }
