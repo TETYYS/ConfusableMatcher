@@ -3,6 +3,10 @@ Provides an `IndexOf` method for strings which uses string (key) to string (valu
 
 See `Export.h` for C-like function exports
 
+# Limitations
+
+Due to limitations in `dense_hash_map`, key or value cannot be `\x00` or `\x01`. These values are reserved as empty or deleted key/value placeholders.
+
 # Example
 
 ```
