@@ -1,3 +1,6 @@
 [submodule "sparsehash"]
 	path = sparsehash
 	url = https://github.com/sparsehash/sparsehash
+[submodule "CUTE"]
+	path = UnitTests/CUTE
+	url = https://github.com/PeterSommerlad/CUTE
