@@ -6,8 +6,6 @@
 #include <sparsehash/dense_hash_map>
 using google::dense_hash_map;
 #include "ConfusableMatcher.h"
-#include <Windows.h>
-
 
 bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 {
@@ -209,7 +207,7 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 		AddMapping(it->first, it->second, true);
 }
 
-void ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value, StackVector<std::pair<std::string, std::string>> &Storage)
+void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<std::string, std::string>> &Storage)
 {
 	assert(Key.length() >= 1);
 	assert(Value.length() >= 1);
@@ -222,14 +220,14 @@ void ConfusableMatcher::GetMappings(std::string_view Key, std::string_view Value
 		return;
 
 	for (auto it = keyArr->second->begin();it != keyArr->second->end();it++) {
-		if ((*it)->first.length() <= Key.length() && (*it)->first == std::string_view(Key.data(), (*it)->first.length())) {
+		if ((*it)->first.length() <= Key.length() && (*it)->first == CMStringView(Key.data(), (*it)->first.length())) {
 			// Whole key found, search for value array
 			auto foundArr = (*it)->second->find(Value[0]);
 			if (foundArr == (*it)->second->end())
 				continue;
 
 			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();it2++) {
-				if (it2->length() <= Value.length() && *it2 == std::string_view(Value.data(), it2->length()))
+				if (it2->length() <= Value.length() && *it2 == CMStringView(Value.data(), it2->length()))
 					Storage.Push(std::pair((*it)->first, *it2)); // Whole value found
 			}
 		}
@@ -265,7 +263,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 				if (mappingsStorage.IsStack) {
 					for (auto x = 0;x < mappingsStorage.CurSize;x++) {
 						matchingStack.push(MatchingState(
-							std::string_view(State.In.data() + mappingsStorage.Stack[x].second.length()),
+							CMStringView(State.In.data() + mappingsStorage.Stack[x].second.length()),
 							State.Contains,
 							State.StartingIndex,
 							State.MatchedChars + mappingsStorage.Stack[x].second.length(),
@@ -276,7 +274,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 					// Heap ver., code kinda repeats but I'm not dealing with custom iterators
 					for (auto it = mappingsStorage.Heap.begin();it != mappingsStorage.Heap.end();it++) {
 						matchingStack.push(MatchingState(
-							std::string_view(State.In.data() + it->second.length()),
+							CMStringView(State.In.data() + it->second.length()),
 							State.Contains,
 							State.StartingIndex,
 							State.MatchedChars + it->second.length(),
@@ -293,7 +291,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 		do {
 			skippedAny = false;
 			for (auto it = Skip.begin();it != Skip.end();it++) {
-				if (it->size() <= (State.In.size() - skipBytes) && std::string_view(State.In.data() + skipBytes, it->size()) == *it) {
+				if (it->size() <= (State.In.size() - skipBytes) && CMStringView(State.In.data() + skipBytes, it->size()) == *it) {
 					skipBytes += it->size();
 					skippedAny = true;
 				}
@@ -303,7 +301,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 		if (skipBytes != 0) {
 			// Push new path
 			matchingStack.push(MatchingState(
-				std::string_view(State.In.data() + skipBytes),
+				CMStringView(State.In.data() + skipBytes),
 				State.Contains,
 				State.StartingIndex,
 				State.MatchedChars + skipBytes,
@@ -322,11 +320,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 
 					// Push new path
 					matchingStack.push(MatchingState(
-						std::string_view(State.In.data() + mappingsStorage.Stack[x].second.length()),
-						std::string_view(State.Contains.data() + mappingsStorage.Stack[x].first.length()),
+						CMStringView(State.In.data() + mappingsStorage.Stack[x].second.length()),
+						CMStringView(State.Contains.data() + mappingsStorage.Stack[x].first.length()),
 						State.StartingIndex,
 						State.MatchedChars + mappingsStorage.Stack[x].second.length(),
-						std::string_view(State.Contains.data(), mappingsStorage.Stack[x].first.length())
+						CMStringView(State.Contains.data(), mappingsStorage.Stack[x].first.length())
 					));
 				}
 			} else {
@@ -336,11 +334,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 						return std::pair(State.StartingIndex, State.MatchedChars + it->second.length());
 
 					matchingStack.push(MatchingState(
-						std::string_view(State.In.data() + it->second.length()),
-						std::string_view(State.Contains.data() + it->first.length()),
+						CMStringView(State.In.data() + it->second.length()),
+						CMStringView(State.Contains.data() + it->first.length()),
 						State.StartingIndex,
 						State.MatchedChars + it->second.length(),
-						std::string_view(State.Contains.data(), it->first.length())
+						CMStringView(State.Contains.data(), it->first.length())
 					));
 				}
 			}
@@ -356,7 +354,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, std::un
 	}
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std::string_view Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
+std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	StackVector<std::pair<std::string, std::string>> MappingsStorage;
 
@@ -372,7 +370,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 
 	for (auto x = StartIndex;x < In.length();x++) {
 		// Find the beginning and construct state from it
-		GetMappings(Contains, std::string_view(In.data() + x), MappingsStorage);
+		GetMappings(Contains, CMStringView(In.data() + x), MappingsStorage);
 		if (MappingsStorage.Size() == 0)
 			continue;
 
@@ -383,11 +381,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 					return std::pair(x, MappingsStorage.Stack[i].second.length());
 
 				auto contains = IndexOfInner(MatchingState(
-					std::string_view(In.data() + x + MappingsStorage.Stack[i].second.length()),
-					std::string_view(Contains.data() + MappingsStorage.Stack[i].first.length()),
+					CMStringView(In.data() + x + MappingsStorage.Stack[i].second.length()),
+					CMStringView(Contains.data() + MappingsStorage.Stack[i].first.length()),
 					x,
 					MappingsStorage.Stack[i].second.length(),
-					std::string_view(Contains.data(), MappingsStorage.Stack[i].first.length())
+					CMStringView(Contains.data(), MappingsStorage.Stack[i].first.length())
 				), Skip, MatchRepeating);
 
 				if (contains.first == -1)
@@ -402,11 +400,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 					return std::pair(x, it->second.length());
 
 				auto contains = IndexOfInner(MatchingState(
-					std::string_view(In.data() + x + it->second.length()),
-					std::string_view(Contains.data() + it->first.length()),
+					CMStringView(In.data() + x + it->second.length()),
+					CMStringView(Contains.data() + it->first.length()),
 					x,
 					it->second.length(),
-					std::string_view(Contains.data(), it->first.length())
+					CMStringView(Contains.data(), it->first.length())
 				), Skip, MatchRepeating);
 
 				if (contains.first == -1)
@@ -422,7 +420,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(std::string_view In, std:
 std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex)
 {
 	assert(StartIndex <= In.length() && StartIndex >= 0);
-	return IndexOfFromView(std::string_view(In), std::string_view(Contains), Skip, MatchRepeating, StartIndex);
+	return IndexOfFromView(CMStringView(In), CMStringView(Contains), Skip, MatchRepeating, StartIndex);
 }
 
 ConfusableMatcher::~ConfusableMatcher()

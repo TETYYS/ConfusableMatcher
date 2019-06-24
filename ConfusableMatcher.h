@@ -5,18 +5,24 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef WIN32
+	typedef std::string_view CMStringView;
+#else
+	typedef std::experimental::string_view CMStringView;
+#endif
+
 namespace google
 {
 	template<class T>
 		class libc_allocator_with_realloc;
 
 #ifdef WIN32
-#define HASHCOMPARE_CLS stdext::hash_compare
+	#define HASHCOMPARE_CLS stdext::hash_compare
 #else
-#define HASHCOMPARE_CLS std::hash
+	#define HASHCOMPARE_CLS std::hash
 #endif
 
-	template<class Key, class T, class HashFcn = std::hash<Key>,
+	template<class Key, class T, class HashFcn = HASHCOMPARE_CLS<Key>,
 		class EqualKey = std::equal_to<Key>,
 		class Alloc = libc_allocator_with_realloc<std::pair<const Key, T>>>
 		class dense_hash_map;
@@ -24,13 +30,13 @@ namespace google
 
 struct MatchingState
 {
-	std::string_view In;
-	std::string_view Contains;
+	CMStringView In;
+	CMStringView Contains;
 	int StartingIndex;
 	int MatchedChars;
-	std::string_view LastMatched;
+	CMStringView LastMatched;
 
-	MatchingState(std::string_view In, std::string_view Contains, int StartingIndex, int MatchedChars, std::string_view LastMatched)
+	MatchingState(CMStringView In, CMStringView Contains, int StartingIndex, int MatchedChars, CMStringView LastMatched)
 	{
 		this->In = In;
 		this->Contains = Contains;
@@ -97,9 +103,9 @@ class ConfusableMatcher
 	>
 		*TheMap;
 	void
-		GetMappings(std::string_view Key, std::string_view Value, StackVector<std::pair<std::string, std::string>> &Storage);
+		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<std::string, std::string>> &Storage);
 	std::pair<int, int>
-		IndexOfFromView(std::string_view In, std::string_view Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
+		IndexOfFromView(CMStringView In, CMStringView Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
 	std::pair<int, int>
 		IndexOfInner(MatchingState State, std::unordered_set<std::string> Skip, bool MatchRepeating);
 
