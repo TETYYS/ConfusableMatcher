@@ -1,6 +1,8 @@
 # ConfusableMatcher
 Provides an `IndexOf` method for strings which uses string (key) to string (value) substring mapping.
 
+See `Export.h` for C-like function exports
+
 # Example
 
 ```
