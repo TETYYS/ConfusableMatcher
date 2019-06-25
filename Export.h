@@ -45,6 +45,7 @@ extern "C" {
 	} CMMap;
 
 	EXPORTED CMHandle InitConfusableMatcher(CMMap Map, bool AddDefaultValues);
+	EXPORTED void FreeConfusableMatcher(CMHandle In);
 	EXPORTED CMListHandle ConstructIgnoreList(char **List, int Count);
 	EXPORTED void FreeIgnoreList(CMListHandle List);
 	EXPORTED uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList);

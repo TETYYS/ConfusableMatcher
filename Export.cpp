@@ -14,7 +14,7 @@ CMHandle InitConfusableMatcher(CMMap Map, bool AddDefaultValues)
 		map.push_back(std::pair<std::string, std::string>(std::string(kv.Key), std::string(kv.Value)));
 	}
 
-	auto matcher = new ConfusableMatcher(map);
+	auto matcher = new ConfusableMatcher(map, AddDefaultValues);
 	return matcher;
 }
 

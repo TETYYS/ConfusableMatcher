@@ -24,7 +24,9 @@ endif()
 include_directories(RunUnitTests "UnitTests/CUTE" ".")
 add_test(RunUnitTests RunUnitTests)
 
-add_library(ConfusableMatcher STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h")
+add_library(ConfusableMatcherStatic STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h")
+set_target_properties(ConfusableMatcherStatic PROPERTIES OUTPUT_NAME ConfusableMatcherStatic)
+add_library(ConfusableMatcher SHARED "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h")
 add_executable(RunUnitTests "UnitTests/UnitTests.cpp" "UnitTests/UnitTests.h")
 
 set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD 17)
@@ -47,4 +49,4 @@ if (NOT WIN32)
 	add_dependencies(ConfusableMatcher SparsehashBuild)
 endif()
 
-target_link_libraries(RunUnitTests ConfusableMatcher)
+target_link_libraries(RunUnitTests ConfusableMatcherStatic)
