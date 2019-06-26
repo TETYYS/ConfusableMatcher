@@ -5,7 +5,7 @@ See `Export.h` for C-like function exports
 
 # Limitations
 
-Due to limitations in `dense_hash_map`, key or value cannot be `\x00` or `\x01`. These values are reserved as empty or deleted key/value placeholders.
+Due to limitations in `dense_hash_map`, key or value cannot start with `\x00` or `\x01`. These values are reserved as empty or deleted key/value placeholders.
 
 # Example
 
