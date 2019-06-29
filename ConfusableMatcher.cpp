@@ -432,6 +432,7 @@ ConfusableMatcher::~ConfusableMatcher()
 					delete it3->second;
 				}
 				delete (*it2)->second;
+				delete *it2;
 			}
 			delete it->second;
 		}

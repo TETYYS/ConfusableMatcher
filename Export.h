@@ -1,34 +1,31 @@
 #pragma once
 
-#include <cstdint>
+#ifdef __cplusplus
+	#include <cstdint>
+#else
+	#include <stdint.h>
+	#include <stdbool.h>
+#endif
 
 #if defined _WIN32 || defined __CYGWIN__
-	#ifdef WIN_EXPORT
-		#ifdef __GNUC__
-			#define EXPORTED __attribute__ ((dllexport))
-		#else
-			#define EXPORTED __declspec(dllexport)
-		#endif
+	#ifdef __GNUC__
+		#define EXPORTED __attribute__ ((dllimport))
+		#define __cdecl __attribute__((cdecl))
 	#else
-		#ifdef __GNUC__
-			#define EXPORTED __attribute__ ((dllimport))
-		#else
-			#define EXPORTED __declspec(dllimport)
-		#endif
+		#define EXPORTED __declspec(dllimport)
 	#endif
-	#define NOT_EXPORTED
 #else
+	#define __cdecl __attribute__((cdecl))
 	#if __GNUC__ >= 4
 		#define EXPORTED __attribute__ ((visibility ("default")))
-		#define NOT_EXPORTED  __attribute__ ((visibility ("hidden")))
 	#else
 		#define EXPORTED
-		#define NOT_EXPORTED
 	#endif
 #endif
 
+#ifdef __cplusplus
 extern "C" {
-
+#endif
 	typedef void *CMHandle;
 	typedef void *CMListHandle;
 
@@ -44,11 +41,23 @@ extern "C" {
 		uint32_t Size;
 	} CMMap;
 
-	EXPORTED CMHandle InitConfusableMatcher(CMMap Map, bool AddDefaultValues);
-	EXPORTED void FreeConfusableMatcher(CMHandle In);
-	EXPORTED CMListHandle ConstructIgnoreList(char **List, int Count);
-	EXPORTED void FreeIgnoreList(CMListHandle List);
-	EXPORTED uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList);
-	EXPORTED bool AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate);
-	EXPORTED bool RemoveMapping(CMHandle CM, char *Key, char *Value);
+	typedef enum _MAPPING_RESPONSE
+	{
+		SUCCESS = 0,
+		ALREADY_EXISTS = 1,
+		EMPTY_KEY = 2,
+		EMPTY_VALUE = 3,
+		INVALID_KEY = 4,
+		INVALID_VALUE = 5
+	} MAPPING_RESPONSE;
+
+	EXPORTED CMHandle __cdecl InitConfusableMatcher(CMMap Map, bool AddDefaultValues);
+	EXPORTED void __cdecl FreeConfusableMatcher(CMHandle In);
+	EXPORTED CMListHandle __cdecl ConstructIgnoreList(char **List, int Count);
+	EXPORTED void __cdecl FreeIgnoreList(CMListHandle List);
+	EXPORTED uint64_t __cdecl StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList);
+	EXPORTED MAPPING_RESPONSE __cdecl AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate);
+	EXPORTED bool __cdecl RemoveMapping(CMHandle CM, char *Key, char *Value);
+#ifdef __cplusplus
 }
+#endif

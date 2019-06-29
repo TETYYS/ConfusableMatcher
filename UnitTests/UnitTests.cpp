@@ -111,7 +111,7 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 	map.push_back(std::pair<std::string, std::string>("N", "/[()[]]/"));
 	map.push_back(std::pair<std::string, std::string>("N", "\U000000f1"));
 	map.push_back(std::pair<std::string, std::string>("N", "|\\|"));
-	map.push_back(std::pair<std::string, std::string>("N", "\U00000245\U00000002f"));
+	map.push_back(std::pair<std::string, std::string>("N", "\U00000245\U0000002f"));
 	map.push_back(std::pair<std::string, std::string>("N", "/IJ"));
 	map.push_back(std::pair<std::string, std::string>("N", "/|/"));
 
@@ -137,46 +137,6 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 
 	return map;
 }
-
-/*void Test7()
-{
-	auto map = GetDefaultMap();
-
-	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
-	auto matcher = ConfusableMatcher(map);
-	int iinc = 0;
-	auto start = std::chrono::high_resolution_clock::now();
-	std::pair<int, int> res;
-	for (auto x = 0;x < 500000;x++) {
-		res = matcher.IndexOf(in, "NIGGER", RECURSIVE, { "_", "%", "$" }, true, 0);
-		iinc += res.first;
-	}
-	auto finish = std::chrono::high_resolution_clock::now();
-
-	std::chrono::duration<double> seconds = (finish - start) / 500000;
-
-	std::ostringstream outp;
-	outp << "Elapsed: " << seconds.count() << "s, iinc: " << iinc << std::endl;
-	OutputDebugStringA(outp.str().data());
-
-	ASSERT(
-		(res.first == 64 && res.second == 57) ||
-		(res.first == 89 && res.second == 32));
-
-	start = std::chrono::high_resolution_clock::now();
-	in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__NIGGER𝘪G___%____$__G__𝓰𝘦Ѓ";
-	for (auto x = 0;x < 500000;x++) {
-		auto res = in.find("NIGGER");
-		iinc += res;
-	}
-	finish = std::chrono::high_resolution_clock::now();
-
-	seconds = (finish - start) / 500000;
-
-	std::ostringstream outp2;
-	outp2 << "Elapsed: " << seconds.count() << "s, iinc: " << iinc << std::endl;
-	OutputDebugStringA(outp2.str().data());
-}*/
 
 void Test7()
 {
@@ -270,9 +230,9 @@ void Test9()
 
 	map.push_back(std::pair<std::string, std::string>(" ", " "));
 
-	auto matcher = ConfusableMatcher(map);
-
 	for (auto x = 0;x < 1000;x++) {
+		auto matcher = ConfusableMatcher(map);
+	
 		auto res = matcher.IndexOf(
 			"NOT NICE",
 			"VERY NICE",

@@ -4,12 +4,19 @@
 #include <unordered_set>
 #include <vector>
 
+#include "Config.h"
+
 #ifdef WIN32
 	#include <string_view>
 	typedef std::string_view CMStringView;
 #else
-	#include <experimental/string_view>
-	typedef std::experimental::string_view CMStringView;
+	#ifdef HAVE_EXPERIMENTAL_STRING_VIEW
+		#include <experimental/string_view>
+		typedef std::experimental::string_view CMStringView;
+	#else
+		#include <string_view>
+		typedef std::string_view CMStringView;
+	#endif
 #endif
 
 #ifdef WIN32

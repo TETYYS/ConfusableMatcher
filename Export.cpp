@@ -54,9 +54,17 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 	return ret[0] | ((uint64_t)ret[1] << 32);
 }
 
-bool AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate)
+MAPPING_RESPONSE AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate)
 {
-	return ((ConfusableMatcher *)CM)->AddMapping(Key, Value, CheckValueDuplicate);
+	try {
+		return ((ConfusableMatcher *)CM)->AddMapping(Key, Value, CheckValueDuplicate) ? SUCCESS : ALREADY_EXISTS;
+	} catch (std::runtime_error e) {
+		if (e.what()[0] == 'K') {
+			return e.what()[3] == ' ' ? INVALID_KEY : EMPTY_KEY;
+		} else {
+			return e.what()[5] == ' ' ? INVALID_VALUE : EMPTY_VALUE;
+		}
+	}
 }
 
 bool RemoveMapping(CMHandle CM, char *Key, char *Value)
