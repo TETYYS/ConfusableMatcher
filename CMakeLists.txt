@@ -44,15 +44,16 @@ if (NOT WIN32)
 	add_custom_target(
 		SparsehashConfig
 		COMMAND ./configure
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/sparsehash
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/sparsehash
 	)
 
 	add_custom_target(
 		SparsehashBuild
 		COMMAND make
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/sparsehash
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/sparsehash
 	)
 
+	add_dependencies(SparsehashBuild SparsehashConfig)
 	add_dependencies(ConfusableMatcher SparsehashConfig)
 	add_dependencies(ConfusableMatcher SparsehashBuild)
 endif()
