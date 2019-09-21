@@ -18,6 +18,9 @@ bool ConfusableMatcher::RemoveMapping(std::string Key, std::string Value)
 			>*
 		>*
 	> *keyArr;
+
+	std::lock_guard<std::shared_mutex> _(GlobalLock);
+
 	auto findKeyArr = TheMap->find(Key[0]);
 
 	if (findKeyArr == TheMap->end())
@@ -115,6 +118,9 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 			>*
 		>*
 	>* keyArr;
+
+	std::lock_guard<std::shared_mutex> _(GlobalLock);
+
 	auto findKeyArr = TheMap->find(Key[0]);
 
 	if (findKeyArr == TheMap->end()) {
@@ -213,6 +219,8 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 	assert(Value.length() >= 1);
 
 	Storage.Reset();
+
+	std::shared_lock<std::shared_mutex> _(GlobalLock);
 
 	// Find array of whole keys
 	auto keyArr = TheMap->find(Key[0]);
@@ -425,6 +433,8 @@ std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Conta
 
 ConfusableMatcher::~ConfusableMatcher()
 {
+	std::lock_guard<std::shared_mutex> _(GlobalLock);
+
 	if (TheMap->size() != 0) {
 		for (auto it = TheMap->begin();it != TheMap->end();it++) {
 			for (auto it2 = it->second->begin();it2 != it->second->end();it2++) {

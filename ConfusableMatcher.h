@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <codecvt>
+#include <shared_mutex>
 #include <unordered_set>
 #include <vector>
 
@@ -117,6 +118,9 @@ class ConfusableMatcher
 		google::libc_allocator_with_realloc<std::pair<const char, CMInnerHashMap>>
 	>
 		*TheMap;
+
+	std::shared_mutex GlobalLock;
+
 	void
 		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<std::string, std::string>> &Storage);
 	std::pair<int, int>

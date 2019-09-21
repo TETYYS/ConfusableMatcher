@@ -3,6 +3,7 @@
 #include <ConfusableMatcher.h>
 #include <cute/cute_runner.h>
 #include <cute/ide_listener.h>
+#include <thread>
 
 void Test1()
 {
@@ -331,7 +332,7 @@ void Test10()
 		true,
 		0);
 	ASSERT_EQUAL(res.first, 0);
-	ASSERT(res.second >= 0 && res.second == 547);
+	ASSERT_EQUAL(res.second, 547);
 }
 
 void Test11()
@@ -427,6 +428,36 @@ void Test15()
 	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x01", 2), std::string("A\x01", 2), false), true);
 }
 
+void Test16()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map);
+	auto running = true;
+
+	std::thread t1([&matcher, &running] {
+		while (running) {
+			matcher.IndexOf("ASD", "ZXC", { }, false);
+		}
+	});
+	std::thread t2([&matcher, &running] {
+		while (running) {
+			matcher.AddMapping("Z", "A", false);
+			matcher.RemoveMapping("Z", "A");
+		}
+	});
+
+	auto now = std::chrono::high_resolution_clock::now();
+
+	while ((std::chrono::high_resolution_clock::now() - now) < std::chrono::seconds(10)) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
+	running = false;
+
+	t1.join();
+	t2.join();
+}
+
 int main()
 {
 	cute::suite s;
@@ -446,6 +477,7 @@ int main()
 	s.push_back(CUTE(Test13));
 	s.push_back(CUTE(Test14));
 	s.push_back(CUTE(Test15));
+	s.push_back(CUTE(Test16));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }
