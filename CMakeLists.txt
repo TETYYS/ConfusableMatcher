@@ -50,6 +50,8 @@ set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD 17)
 set_property(TARGET ConfusableMatcher PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ConfusableMatcherStatic PROPERTY CXX_STANDARD 17)
 set_property(TARGET ConfusableMatcherStatic PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET RunUnitTests PROPERTY CXX_STANDARD 17)
+set_property(TARGET RunUnitTests PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if (NOT WIN32)
 	file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/sparsehash/build)

@@ -1,1 +1,4 @@
 /build
+
+# generate config file
+Config.h
