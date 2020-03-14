@@ -41,23 +41,9 @@ extern "C" {
 		uint32_t Size;
 	} CMMap;
 
-	typedef enum _MAPPING_RESPONSE
-	{
-		SUCCESS = 0,
-		ALREADY_EXISTS = 1,
-		EMPTY_KEY = 2,
-		EMPTY_VALUE = 3,
-		INVALID_KEY = 4,
-		INVALID_VALUE = 5
-	} MAPPING_RESPONSE;
-
-	EXPORTED CMHandle __cdecl InitConfusableMatcher(CMMap Map, bool AddDefaultValues);
+	EXPORTED CMHandle __cdecl InitConfusableMatcher(CMMap Map, char** IgnoreList, int IgnoreCount, bool AddDefaultValues);
 	EXPORTED void __cdecl FreeConfusableMatcher(CMHandle In);
-	EXPORTED CMListHandle __cdecl ConstructIgnoreList(char **List, int Count);
-	EXPORTED void __cdecl FreeIgnoreList(CMListHandle List);
-	EXPORTED uint64_t __cdecl StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, CMListHandle IgnoreList);
-	EXPORTED MAPPING_RESPONSE __cdecl AddMapping(CMHandle CM, char *Key, char *Value, bool CheckValueDuplicate);
-	EXPORTED bool __cdecl RemoveMapping(CMHandle CM, char *Key, char *Value);
+	EXPORTED uint64_t __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, bool MatchRepeating, int StartIndex, int StatePushLimit);
 #ifdef __cplusplus
 }
 #endif

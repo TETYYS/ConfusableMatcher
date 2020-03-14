@@ -14,8 +14,8 @@ void Test1()
 	map.push_back(std::pair<std::string, std::string>("C", "S"));
 	map.push_back(std::pair<std::string, std::string>("E", "T"));
 
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("TEST", "NICE", { }, false, 0);
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("TEST", "NICE", false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 4);
 }
@@ -27,20 +27,20 @@ void Test2()
 	map.push_back(std::pair<std::string, std::string>("V", "VA"));
 	map.push_back(std::pair<std::string, std::string>("V", "VO"));
 
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("VV", "VAVOVAVO", { }, false, 0);
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("VV", "VAVOVAVO", false, 0);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
-	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 0);
-	ASSERT_EQUAL(res.first, 0);
+	res = matcher.IndexOf("VAVOVAVO", "VV", false, 0);
+	ASSERT(res.first == 0 || res.first == 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 4);
+	res = matcher.IndexOf("VAVOVAVO", "VV", false, 4);
 	ASSERT_EQUAL(res.first, 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 2);
-	ASSERT_EQUAL(res.first, 2);
+	res = matcher.IndexOf("VAVOVAVO", "VV", false, 2);
+	ASSERT(res.first == 2 || res.first == 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", { }, false, 3);
+	res = matcher.IndexOf("VAVOVAVO", "VV", false, 3);
 	ASSERT_EQUAL(res.first, 4);
 	ASSERT(res.second == 3 || res.second == 4);
 }
@@ -52,8 +52,8 @@ void Test3()
 	map.push_back(std::pair<std::string, std::string>("A", "\U00000002\U00000003"));
 	map.push_back(std::pair<std::string, std::string>("B", "\U000000FA\U000000FF"));
 
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("\U00000002\U00000003\U000000FA\U000000FF", "AB", { }, false, 0);
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("\U00000002\U00000003\U000000FA\U000000FF", "AB", false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
 }
@@ -65,8 +65,8 @@ void Test4()
 	map.push_back(std::pair<std::string, std::string>("S", "$"));
 	map.push_back(std::pair<std::string, std::string>("D", "[)"));
 
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", { "_", " " }, true, 0);
+	auto matcher = ConfusableMatcher(map, { "_", " " });
+	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", true, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 11);
 }
@@ -79,8 +79,8 @@ void Test5()
 	map.push_back(std::pair<std::string, std::string>("N", "/\\"));
 	map.push_back(std::pair<std::string, std::string>("I", "/"));
 
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("/\\/CE", "NICE", { }, false, 0);
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("/\\/CE", "NICE", false, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 5);
 }
@@ -93,14 +93,14 @@ void Test6()
 	map.push_back(std::pair<std::string, std::string>("V", "\\/"));
 	map.push_back(std::pair<std::string, std::string>("I", "/"));
 
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("I/\\/AM", "INAN", { }, true, 0);
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("I/\\/AM", "INAN", true, 0);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
-	res = matcher.IndexOf("I/\\/AM", "INAM", { }, true, 0);
+	res = matcher.IndexOf("I/\\/AM", "INAM", true, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
-	res = matcher.IndexOf("I/\\/AM", "IIVAM", { }, true, 0);
+	res = matcher.IndexOf("I/\\/AM", "IIVAM", true, 0);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
 }
@@ -144,8 +144,8 @@ void Test7()
 	auto map = GetDefaultMap();
 
 	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf(in, "NIGGER", { "_", "%", "$" }, true, 0);
+	auto matcher = ConfusableMatcher(map, { "_", "%", "$" });
+	auto res = matcher.IndexOf(in, "NIGGER", true, 0);
 
 	ASSERT(
 		(res.first == 64 && res.second == 57) ||
@@ -175,7 +175,7 @@ void LidlNormalizerTests()
 	for (auto x = 0;x < keys.size();x++)
 		map.push_back(std::pair<std::string, std::string>(keys[x], vals[x]));
 
-	auto matcher = ConfusableMatcher(map);
+	auto matcher = ConfusableMatcher(map, { });
 
 	auto data = {
 		std::make_tuple(std::vector<std::string>({ "\U00000105", "A" }), std::vector<int>({ 0, 2 })),
@@ -204,7 +204,7 @@ void LidlNormalizerTests()
 		std::vector<std::string> chr;
 		std::vector<int> eq;
 		std::tie(chr, eq) = entry;
-		auto res = matcher.IndexOf(chr[0], chr[1], { }, true, 0);
+		auto res = matcher.IndexOf(chr[0], chr[1], true, 0);
 		ASSERT_EQUAL(res.first, eq[0]);
 		ASSERT_EQUAL(res.second, eq[1]);
 	}
@@ -214,11 +214,10 @@ void Test8()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	auto matcher = ConfusableMatcher(map);
+	auto matcher = ConfusableMatcher(map, { "\U00000332", "\U00000305", "[", "]" });
 	auto res = matcher.IndexOf(
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890",
-		{ "\U00000332", "\U00000305", "[", "]" },
 		false,
 		0);
 	ASSERT_EQUAL(res.first, 5);
@@ -226,39 +225,6 @@ void Test8()
 }
 
 void Test9()
-{
-	std::vector<std::pair<std::string, std::string>> map;
-
-	map.push_back(std::pair<std::string, std::string>(" ", " "));
-
-	for (auto x = 0;x < 1000;x++) {
-		auto matcher = ConfusableMatcher(map);
-	
-		auto res = matcher.IndexOf(
-			"NOT NICE",
-			"VERY NICE",
-			{ },
-			false,
-			0);
-		ASSERT_EQUAL(res.first, -1);
-		ASSERT_EQUAL(res.second, -1);
-
-		matcher.AddMapping("VERY", "NOT", false);
-
-		res = matcher.IndexOf(
-			"NOT NICE",
-			"VERY NICE",
-			{ },
-			false,
-			0);
-		ASSERT_EQUAL(res.first, 0);
-		ASSERT_EQUAL(res.second, 8);
-
-		matcher.RemoveMapping("VERY", "NOT");
-	}
-}
-
-void Test10()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
@@ -282,68 +248,103 @@ void Test10()
 	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQR"));
 	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQRS"));
 
-	auto matcher = ConfusableMatcher(map);
+	auto matcher = ConfusableMatcher(map, { });
 
 	auto res = matcher.IndexOf(
 		"ABCDEFGHIJKLMNOPQRS",
 		"B",
-		{ },
 		false,
-		0);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT(res.second >= 0 && res.second == 1);
+		0,
+		1000);
+	ASSERT(res.first == 0 || res.first == 1);
+	ASSERT_EQUAL(res.second, 1);
 
-	matcher.RemoveMapping("B", "ABCDEFGHIJKLMNOP");
-	matcher.AddMapping("B", "P", false);
-	matcher.AddMapping("B", "PQ", false);
-	matcher.AddMapping("B", "PQR", false);
-	matcher.AddMapping("B", "PQRS", false);
-	matcher.AddMapping("B", "PQRST", false);
-	matcher.AddMapping("B", "PQRSTU", false);
-	matcher.AddMapping("B", "PQRSTUV", false);
-	matcher.AddMapping("B", "PQRSTUVW", false);
-	matcher.AddMapping("B", "PQRSTUVWX", false);
-	matcher.AddMapping("B", "PQRSTUVWXY", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ0", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ01", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ012", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ0123", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ01234", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ012345", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ0123456", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ01234567", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ012345678", false);
-	matcher.AddMapping("B", "PQRSTUVWXYZ0123456789", false);
+	map.clear();
+	map.push_back(std::pair<std::string, std::string>("B", "A"));
+	map.push_back(std::pair<std::string, std::string>("B", "AB"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABC"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCD"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDE"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEF"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFG"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGH"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHI"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJ"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJK"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKL"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLM"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMN"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNO"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQ"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQR"));
+	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQRS"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0123456789"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ012345678"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ01234567"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0123456"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ012345"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ01234"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0123"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ012"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ01"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXY"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWX"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVW"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUV"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRSTU"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRST"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQRS"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQR"));
+	map.push_back(std::pair<std::string, std::string>("B", "PQ"));
+	map.push_back(std::pair<std::string, std::string>("B", "P"));
+	auto matcher2 = ConfusableMatcher(map, { });
 	
-	res = matcher.IndexOf(
+	res = matcher2.IndexOf(
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
 		"BB",
-		{ },
 		false,
-		0);
+		0,
+		1000);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 2);
 
-	res = matcher.IndexOf(
+	res = matcher2.IndexOf(
 		"PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789",
 		"BBBBBBBBBBBBBBBBBBBBBBBBBBB",
-		{  },
 		true,
-		0);
+		0,
+		2000);
 	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 547);
+	ASSERT(res.second >= 547 && res.second <= 567);
+}
+
+void Test10()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf(":)", "", true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 0);
+
+	res = matcher.IndexOf("", ":)", true, 0);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
 }
 
 void Test11()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf(":)", "", { }, true, 0);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 0);
 
-	res = matcher.IndexOf("", ":)", { }, true, 0);
+	auto matcher = ConfusableMatcher(map, { });
+
+	matcher.AddMapping("A", "A", false);
+	matcher.AddMapping("A", "A", false);
+	matcher.AddMapping("A", "A", false);
+	matcher.AddMapping("A", "A", false);
+
+	auto res = matcher.IndexOf("ABAAA", "ABAR", true, 0, 1000);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -351,15 +352,14 @@ void Test11()
 void Test12()
 {
 	std::vector<std::pair<std::string, std::string>> map;
+	auto matcher = ConfusableMatcher(map, { });
 
-	auto matcher = ConfusableMatcher(map);
+	auto res = matcher.IndexOf("A", "A", false, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 1);
 
-	matcher.AddMapping("A", "A", false);
-	matcher.AddMapping("A", "A", false);
-	matcher.AddMapping("A", "A", false);
-	matcher.AddMapping("A", "A", false);
-
-	auto res = matcher.IndexOf("ABAAA", "ABAR", { }, true, 0);
+	auto matcher2 = ConfusableMatcher(map, { }, false);
+	res = matcher2.IndexOf("A", "A", false, 0);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -367,47 +367,7 @@ void Test12()
 void Test13()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	auto matcher = ConfusableMatcher(map);
-	auto res = matcher.IndexOf("?", "?", { }, true, 0);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
-
-	for (auto x = 0;x < 1000;x++) {
-		ASSERT_EQUAL(matcher.RemoveMapping("?", "?"), false);
-		ASSERT_EQUAL(matcher.AddMapping("?", "?", false), true);
-		ASSERT_EQUAL(matcher.RemoveMapping("?_", "?_"), false);
-		ASSERT_EQUAL(matcher.RemoveMapping("?", "_"), false);
-		ASSERT_EQUAL(matcher.RemoveMapping("?", "?__"), false);
-
-		ASSERT_EQUAL(matcher.AddMapping("?_", "?_", false), true);
-		ASSERT_EQUAL(matcher.AddMapping("?_", "_", false), true);
-		ASSERT_EQUAL(matcher.AddMapping("?_", "?___", false), true);
-		ASSERT_EQUAL(matcher.RemoveMapping("?_", "?___"), true);
-		ASSERT_EQUAL(matcher.RemoveMapping("?_", "_"), true);
-		ASSERT_EQUAL(matcher.RemoveMapping("?_", "?_"), true);
-		ASSERT_EQUAL(matcher.RemoveMapping("?", "?"), true);
-	}
-}
-
-void Test14()
-{
-	std::vector<std::pair<std::string, std::string>> map;
-	auto matcher = ConfusableMatcher(map);
-
-	auto res = matcher.IndexOf("A", "A", { }, false, 0);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 1);
-
-	auto matcher2 = ConfusableMatcher(map, false);
-	res = matcher2.IndexOf("A", "A", { }, false, 0);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
-}
-
-void Test15()
-{
-	std::vector<std::pair<std::string, std::string>> map;
-	auto matcher = ConfusableMatcher(map);
+	auto matcher = ConfusableMatcher(map, { });
 	ASSERT_THROWS(matcher.AddMapping("", "?", false), std::exception);
 	ASSERT_THROWS(matcher.AddMapping("?", "", false), std::exception);
 	ASSERT_THROWS(matcher.AddMapping("", "", false), std::exception);
@@ -428,21 +388,25 @@ void Test15()
 	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x01", 2), std::string("A\x01", 2), false), true);
 }
 
-void Test16()
+void Test14()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	auto matcher = ConfusableMatcher(map);
+	auto matcher = ConfusableMatcher(map, { });
 	auto running = true;
 
 	std::thread t1([&matcher, &running] {
 		while (running) {
-			matcher.IndexOf("ASD", "ZXC", { }, false);
+			matcher.IndexOf("ASD", "ZXC", true, 0);
 		}
 	});
 	std::thread t2([&matcher, &running] {
 		while (running) {
-			matcher.AddMapping("Z", "A", false);
-			matcher.RemoveMapping("Z", "A");
+			matcher.IndexOf("LIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH", "NIGGAR", true, 0);
+		}
+	});
+	std::thread t3([&matcher, &running] {
+		while (running) {
+			matcher.IndexOf("NIGGAR", "NIGGER", true, 0);
 		}
 	});
 
@@ -456,6 +420,33 @@ void Test16()
 
 	t1.join();
 	t2.join();
+	t3.join();
+}
+
+void Test15()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	auto matcher = ConfusableMatcher(map, { "." });
+
+	matcher.AddMapping(".", ".", false);
+
+	auto res = matcher.IndexOf("FOLLOWONBOT.COM", "FOLLOWONBOT.COM", true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 15);
+}
+
+void Test16()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
+	map.push_back(std::pair<std::string, std::string>("N", "\\/\\"));
+
+	auto matcher = ConfusableMatcher(map, { });
+
+	auto res = matcher.IndexOf("/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/", "NNNNNNNNNNNNNNNA", true, 0);
+	ASSERT_EQUAL(res.first, -2);
+	ASSERT_EQUAL(res.second, -2);
 }
 
 int main()

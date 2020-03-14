@@ -53,7 +53,7 @@ struct MatchingState
 	}
 };
 
-constexpr int STACKVECTOR_SIZE = 16;
+constexpr int STACKVECTOR_SIZE = 64;
 template<class T>
 struct StackVector
 {
@@ -119,23 +119,30 @@ class ConfusableMatcher
 	>
 		*TheMap;
 
-	std::shared_mutex GlobalLock;
+	google::dense_hash_map<
+		char,
+		std::vector<std::string>*,
+		HASHCOMPARE_CLS<char>,
+		std::equal_to<char>,
+		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::string>*>>
+	>
+		*SkipSet;
 
 	void
 		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<std::string, std::string>> &Storage);
 	std::pair<int, int>
-		IndexOfFromView(CMStringView In, CMStringView Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex);
+		IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, int StatePushLimit);
 	std::pair<int, int>
-		IndexOfInner(MatchingState State, std::unordered_set<std::string> Skip, bool MatchRepeating);
+		IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit);
 
 	public:
-	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, bool AddDefaultValues = true);
+	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);
 	bool
 		AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
-	bool
-		RemoveMapping(std::string Key, std::string Value);
 	std::pair<int, int>
-		IndexOf(std::string In, std::string Contains, std::unordered_set<std::string> Skip, bool MatchRepeating, int StartIndex = 0);
+		IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex = 0, int StatePushLimit = 1000);
+	bool
+		AddSkip(std::string In);
 
 	~ConfusableMatcher();
 };
