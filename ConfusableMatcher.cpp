@@ -20,10 +20,10 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 
 	std::vector<
 		std::pair<
-			std::string, // Key whole
+			CMString, // Key whole
 			google::dense_hash_map<
 				char, // Value first char
-				std::vector<std::string>* // Values whole
+				std::vector<CMString>* // Values whole
 			>*
 		>*
 	>* keyArr;
@@ -34,10 +34,10 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 		// Root doesn't exist
 		keyArr = new std::vector<
 			std::pair<
-				std::string, // Key whole
+				CMString, // Key whole
 				google::dense_hash_map<
 					char, // Value first char
-					std::vector<std::string>* // Values whole
+					std::vector<CMString>* // Values whole
 				>*
 			>*
 		>;
@@ -47,11 +47,11 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 
 	google::dense_hash_map<
 		char, // Value first char
-		std::vector<std::string>* // Values whole
+		std::vector<CMString>* // Values whole
 	> *valDict = nullptr;
 
 	for (auto it = keyArr->begin();it != keyArr->end();it++) {
-		if ((*it)->first == Key) {
+		if ((*it)->first.View() == Key) {
 			valDict = (*it)->second;
 			break;
 		}
@@ -61,50 +61,57 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 		// Value dictionary doesn't exist
 		valDict = new google::dense_hash_map<
 			char, // Value first char
-			std::vector<std::string>* // Values whole
+			std::vector<CMString>* // Values whole
 		>;
 		valDict->set_empty_key('\x0');
 		valDict->set_deleted_key('\x1');
-		keyArr->push_back(new std::pair<std::string, google::dense_hash_map<char, std::vector<std::string>*>*>(Key, valDict));
+
+		auto key = CMString::CopyFromString(Key);
+
+		keyArr->push_back(new std::pair<CMString, google::dense_hash_map<char, std::vector<CMString>*>*>(key, valDict));
 	}
 
-	std::vector<std::string> *valArr;
+	std::vector<CMString> *valArr;
 	auto findValArr = valDict->find(Value[0]);
 	if (findValArr == valDict->end()) {
 		// Value array doesn't exist
-		valArr = new std::vector<std::string>;
+		valArr = new std::vector<CMString>;
 		(*valDict)[Value[0]] = valArr;
 	} else
 		valArr = findValArr->second;
 
 	if (CheckValueDuplicate) {
 		for (auto it = valArr->begin();it != valArr->end();it++) {
-			if (*it == Value) {
+			if ((*it).View() == Value) {
 				return false;
 			}
 		}
 	}
 
-	valArr->push_back(Value);
+	auto value = CMString::CopyFromString(Value);
+
+	valArr->push_back(value);
 	return true;
 }
 
 bool ConfusableMatcher::AddSkip(std::string In)
 {
+	auto in = CMString::CopyFromString(In);
+
 	auto found = SkipSet->find(In[0]);
 	if (found != SkipSet->end()) {
 		for (auto it = found->second->begin();it != found->second->end();it++) {
-			if (*it == In) {
+			if ((*it).View() == In) {
 				return false;
 			}
 		}
 
-		found->second->push_back(In);
+		found->second->push_back(in);
 		return true;
 	}
 
-	auto newVec = new std::vector<std::string>();
-	newVec->push_back(In);
+	auto newVec = new std::vector<CMString>();
+	newVec->push_back(in);
 
 	(*SkipSet)[In[0]] = newVec;
 
@@ -117,13 +124,13 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 		char, // Key first char
 		std::vector<
 			std::pair<
-				std::string, // Key whole
+				CMString, // Key whole
 				CMInnerHashMap*
 			>*
 		>*,
 		HASHCOMPARE_CLS<char>,
 		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, CMInnerHashMap>>
+		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::pair<CMString, CMInnerHashMap*>*>*>>
 	>;
 	TheMap->set_empty_key(U'\x0');
 	TheMap->set_deleted_key(U'\x1');
@@ -143,10 +150,10 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 
 	SkipSet = new google::dense_hash_map<
 		char,
-		std::vector<std::string>*,
+		std::vector<CMString>*,
 		HASHCOMPARE_CLS<char>,
 		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::string>*>>
+		google::libc_allocator_with_realloc<std::pair<const char, std::vector<CMString>*>>
 	>;
 	SkipSet->set_empty_key(U'\x0');
 	SkipSet->set_deleted_key(U'\x1');
@@ -155,7 +162,36 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 		AddSkip(*it);
 }
 
-void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<std::string, std::string>> &Storage)
+void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Output)
+{
+	StackVector<std::pair<std::string, std::string>> mappingsStorage;
+
+	assert(In.size() >= 1);
+
+	// Find array of whole keys
+	auto keyArr = TheMap->find(In[0]);
+	if (keyArr == TheMap->end())
+		return;
+
+	for (auto keyIterator = keyArr->second->begin();keyIterator != keyArr->second->end();keyIterator++) {
+		if ((*keyIterator)->first.Len > In.size() || ((*keyIterator)->first).View() != CMStringView(In.data(), (*keyIterator)->first.Len))
+			continue;
+
+		// Whole key found, return value array
+
+		auto values = (*keyIterator)->second;
+
+		for (auto valueIterator = values->begin();valueIterator != values->end();valueIterator++) {
+			for (auto x = 0;x < valueIterator->second->size();x++) {
+				auto s = valueIterator->second;
+
+				Output.Push((*(valueIterator->second))[x]);
+			}
+		}
+	}
+}
+
+void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage)
 {
 	assert(Key.size() >= 1);
 	assert(Value.size() >= 1);
@@ -168,15 +204,15 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 		return;
 
 	for (auto it = keyArr->second->begin();it != keyArr->second->end();it++) {
-		if ((*it)->first.size() <= Key.size() && (*it)->first == CMStringView(Key.data(), (*it)->first.size())) {
+		if ((*it)->first.Len <= Key.size() && ((*it)->first).View() == CMStringView(Key.data(), (*it)->first.Len)) {
 			// Whole key found, search for value array
 			auto foundArr = (*it)->second->find(Value[0]);
 			if (foundArr == (*it)->second->end())
 				continue;
 
 			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();it2++) {
-				if (it2->size() <= Value.size() && *it2 == CMStringView(Value.data(), it2->size()))
-					Storage.Push(std::pair<std::string, std::string>((*it)->first, *it2)); // Whole value found
+				if (it2->Len <= Value.size() && (*it2).View() == CMStringView(Value.data(), it2->Len))
+					Storage.Push(std::pair<CMStringView, CMStringView>(((*it)->first).View(), (*it2).View())); // Whole value found
 			}
 		}
 	}
@@ -187,7 +223,7 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit)
 {
 	std::stack<MatchingState> matchingStates;
-	StackVector<std::pair<std::string, std::string>> mappingsStorage;
+	StackVector<std::pair<CMStringView, CMStringView>> mappingsStorage;
 
 	assert(State.Contains.size() > 0);
 
@@ -243,9 +279,9 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 		auto foundSkip = SkipSet->find(State.In[0]);
 		if (foundSkip != SkipSet->end()) {
 			for (auto it = foundSkip->second->begin();it != foundSkip->second->end();it++) {
-				auto thisSz = it->size();
+				auto thisSz = it->Len;
 
-				if (thisSz <= State.In.size() && CMStringView(State.In.data(), thisSz) == *it) {
+				if (thisSz <= State.In.size() && CMStringView(State.In.data(), thisSz) == (*it).View()) {
 					// Push new path
 
 					matchingStates.push(MatchingState(
@@ -316,7 +352,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 
 std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, int StatePushLimit)
 {
-	StackVector<std::pair<std::string, std::string>> MappingsStorage;
+	StackVector<std::pair<CMStringView, CMStringView>> MappingsStorage;
 	int statePushes = 0;
 
 	if (Contains.size() == 0)
@@ -392,21 +428,28 @@ ConfusableMatcher::~ConfusableMatcher()
 {
 
 	if (TheMap->size() != 0) {
-		for (auto it = TheMap->begin();it != TheMap->end();it++) {
-			for (auto it2 = it->second->begin();it2 != it->second->end();it2++) {
-				for (auto it3 = (*it2)->second->begin();it3 != (*it2)->second->end();it3++) {
-					delete it3->second;
+		for (auto keyMapIt = TheMap->begin();keyMapIt != TheMap->end();keyMapIt++) {
+			for (auto keyArrayIt = keyMapIt->second->begin();keyArrayIt != keyMapIt->second->end();keyArrayIt++) {
+				(*keyArrayIt)->first.Free();
+				for (auto valMapIt = (*keyArrayIt)->second->begin();valMapIt != (*keyArrayIt)->second->end();valMapIt++) {
+					for (auto valArrayIt = valMapIt->second->begin();valArrayIt != valMapIt->second->end();valArrayIt++) {
+						valArrayIt->Free();
+					}
+					delete valMapIt->second;
 				}
-				delete (*it2)->second;
-				delete *it2;
+				delete (*keyArrayIt)->second;
+				delete *keyArrayIt;
 			}
-			delete it->second;
+			delete keyMapIt->second;
 		}
 	}
 	delete TheMap;
 
 	if (SkipSet->size() != 0) {
 		for (auto it = SkipSet->begin();it != SkipSet->end();it++) {
+			for (auto it2 = it->second->begin();it2 != it->second->end();it2++) {
+				it2->Free();
+			}
 			delete it->second;
 		}
 	}

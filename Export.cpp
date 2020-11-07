@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-CMHandle InitConfusableMatcher(CMMap Map, char** IgnoreList, int IgnoreCount, bool AddDefaultValues)
+CMHandle InitConfusableMatcher(CMMap Map, char **IgnoreList, int IgnoreCount, bool AddDefaultValues)
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
@@ -41,4 +41,29 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 	ret[1] = rawRet.second;
 
 	return ret[0] | ((uint64_t)ret[1] << 32);
+}
+
+uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t OutputSize)
+{
+	auto cm = ((ConfusableMatcher*)CM);
+
+	StackVector<CMString> output;
+	cm->GetKeyMappings(In, output);
+
+	auto outputSize = output.Size();
+
+	if (OutputSize < outputSize)
+		return outputSize;
+
+	if (output.IsStack) {
+		for (auto x = 0;x < output.CurSize;x++) {
+			Output[x] = output.Stack[x].Str;
+		}
+	} else {
+		for (auto x = 0;x < output.Heap.size();x++) {
+			Output[x] = output.Heap[x].Str;
+		}
+	}
+
+	return outputSize;
 }

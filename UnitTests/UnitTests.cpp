@@ -449,6 +449,107 @@ void Test16()
 	ASSERT_EQUAL(res.second, -2);
 }
 
+void Test17()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("N", "_"));
+	map.push_back(std::pair<std::string, std::string>("N", "__"));
+
+	auto matcher = ConfusableMatcher(map, {});
+
+	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", true, 0, 100000);
+	ASSERT_EQUAL(res.first, -1);
+	ASSERT_EQUAL(res.second, -1);
+}
+
+void Test18()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("N", "12345"));
+	map.push_back(std::pair<std::string, std::string>("A", "1"));
+	map.push_back(std::pair<std::string, std::string>("A", "5"));
+	map.push_back(std::pair<std::string, std::string>("A", "234"));
+
+	auto matcher = ConfusableMatcher(map, {});
+
+	auto res = matcher.IndexOf("N12345M", "NAM", true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 7);
+}
+
+void Test19()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("A", "1"));
+	map.push_back(std::pair<std::string, std::string>("B", "1"));
+	map.push_back(std::pair<std::string, std::string>("C", "1"));
+
+	auto matcher = ConfusableMatcher(map, {});
+
+	auto res = matcher.IndexOf("111111", "ABC", true, 0);
+	ASSERT_EQUAL(res.first, 0);
+	ASSERT_EQUAL(res.second, 3);
+}
+
+void Test20()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("A", "1"));
+	map.push_back(std::pair<std::string, std::string>("B", "1"));
+	map.push_back(std::pair<std::string, std::string>("C", "1"));
+
+	auto matcher = ConfusableMatcher(map, {}, false);
+
+	StackVector<CMString> output;
+	matcher.GetKeyMappings("A", output);
+	ASSERT_EQUAL("1", output.Stack[0].View());
+
+	output.Reset();
+	matcher.GetKeyMappings("B", output);
+	ASSERT_EQUAL("1", output.Stack[0].View());
+
+	output.Reset();
+	matcher.GetKeyMappings("C", output);
+	ASSERT_EQUAL("1", output.Stack[0].View());
+}
+
+void Test21()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("1", "AB"));
+	map.push_back(std::pair<std::string, std::string>("1", "CD"));
+	map.push_back(std::pair<std::string, std::string>("2", "EEE"));
+
+	auto matcher = ConfusableMatcher(map, {}, false);
+
+	StackVector<CMString> output;
+	matcher.GetKeyMappings("1", output);
+	output.Reset();
+	matcher.GetKeyMappings("1", output);
+
+	ASSERT(output.Stack[0].View() == "AB" || output.Stack[0].View() == "CD");
+	ASSERT(output.Stack[1].View() == "AB" || output.Stack[1].View() == "CD");
+
+	output.Reset();
+	matcher.GetKeyMappings("2", output);
+
+	ASSERT_EQUAL("EEE", output.Stack[0].View());
+}
+
+void Test22()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	for (auto x = 0;x < 500;x++)
+		map.push_back(std::pair<std::string, std::string>("123", std::to_string(x)));
+
+	auto matcher = ConfusableMatcher(map, {}, false);
+
+	StackVector<CMString> output;
+	matcher.GetKeyMappings("123", output);
+
+	ASSERT_EQUAL(500, output.Size());
+}
+
 int main()
 {
 	cute::suite s;
@@ -469,6 +570,12 @@ int main()
 	s.push_back(CUTE(Test14));
 	s.push_back(CUTE(Test15));
 	s.push_back(CUTE(Test16));
+	s.push_back(CUTE(Test17));
+	s.push_back(CUTE(Test18));
+	s.push_back(CUTE(Test19));
+	s.push_back(CUTE(Test20));
+	s.push_back(CUTE(Test21));
+	s.push_back(CUTE(Test22));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

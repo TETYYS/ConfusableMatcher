@@ -1,9 +1,6 @@
 LIBRARY outputname
 EXPORTS
-	AddMapping @1
-	ConstructIgnoreList @2
-	FreeConfusableMatcher @3
-	FreeIgnoreList @4
-	InitConfusableMatcher @5
-	RemoveMapping @6
-	StringIndexOf @7
+	FreeConfusableMatcher @1
+	GetKeyMappings @2
+	InitConfusableMatcher @3
+	StringIndexOf @4
