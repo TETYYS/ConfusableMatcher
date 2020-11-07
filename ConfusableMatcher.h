@@ -167,7 +167,7 @@ class ConfusableMatcher
 	void
 		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage);
 	std::pair<int, int>
-		IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, int StatePushLimit);
+		IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit);
 	std::pair<int, int>
 		IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit);
 
@@ -176,7 +176,7 @@ class ConfusableMatcher
 	bool
 		AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
 	std::pair<int, int>
-		IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex = 0, int StatePushLimit = 1000);
+		IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex = 0, bool StartFromEnd = false, int StatePushLimit = 1000);
 	bool
 		AddSkip(std::string In);
 	void

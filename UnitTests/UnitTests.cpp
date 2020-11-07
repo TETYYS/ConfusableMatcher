@@ -255,6 +255,7 @@ void Test9()
 		"B",
 		false,
 		0,
+		false,
 		1000);
 	ASSERT(res.first == 0 || res.first == 1);
 	ASSERT_EQUAL(res.second, 1);
@@ -306,6 +307,7 @@ void Test9()
 		"BB",
 		false,
 		0,
+		false,
 		1000);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 2);
@@ -315,6 +317,7 @@ void Test9()
 		"BBBBBBBBBBBBBBBBBBBBBBBBBBB",
 		true,
 		0,
+		false,
 		2000);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT(res.second >= 547 && res.second <= 567);
@@ -344,7 +347,7 @@ void Test11()
 	matcher.AddMapping("A", "A", false);
 	matcher.AddMapping("A", "A", false);
 
-	auto res = matcher.IndexOf("ABAAA", "ABAR", true, 0, 1000);
+	auto res = matcher.IndexOf("ABAAA", "ABAR", true, 0, false, 1000);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -457,7 +460,7 @@ void Test17()
 
 	auto matcher = ConfusableMatcher(map, {});
 
-	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", true, 0, 100000);
+	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", true, 0, false, 100000);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -550,6 +553,52 @@ void Test22()
 	ASSERT_EQUAL(500, output.Size());
 }
 
+void Test23()
+{
+	auto map = GetDefaultMap();
+
+	std::string in = "AA BB CC AA FF AA RR";
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf(in, "AA", true);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(2, res.second);
+
+	res = matcher.IndexOf(in, "AA", true, in.size() - 1, true);
+
+	ASSERT_EQUAL(15, res.first);
+	ASSERT_EQUAL(2, res.second);
+}
+
+void Test24()
+{
+	auto map = GetDefaultMap();
+
+	std::string in = "DASD";
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf(in, "D", true, in.size() - 1, true);
+
+	ASSERT_EQUAL(3, res.first);
+	ASSERT_EQUAL(1, res.second);
+}
+
+void Test25()
+{
+	auto map = GetDefaultMap();
+
+	std::string in = "ASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASB";
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf(in, "ASB", true, 0, false, 20);
+
+	ASSERT_EQUAL(-2, res.first);
+	ASSERT_EQUAL(-2, res.second);
+
+	res = matcher.IndexOf(in, "ASB", true, in.size() - 1, true, 20);
+
+	ASSERT_EQUAL(92, res.first);
+	ASSERT_EQUAL(3, res.second);
+}
+
 int main()
 {
 	cute::suite s;
@@ -576,6 +625,9 @@ int main()
 	s.push_back(CUTE(Test20));
 	s.push_back(CUTE(Test21));
 	s.push_back(CUTE(Test22));
+	s.push_back(CUTE(Test23));
+	s.push_back(CUTE(Test24));
+	s.push_back(CUTE(Test25));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

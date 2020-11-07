@@ -350,7 +350,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 	}
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, int StatePushLimit)
+std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
 {
 	StackVector<std::pair<CMStringView, CMStringView>> MappingsStorage;
 	int statePushes = 0;
@@ -365,7 +365,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 	 *  In(0), Contains(0) returns (0, 0) due to check above (nothing does contain nothing)
 	 */
 
-	for (int x = StartIndex;x < In.size();x++) {
+	for (int x = StartIndex;StartFromEnd ? (x >= 0) : (x < In.size());x += StartFromEnd ? -1 : 1) {
 		// Find the beginning and construct state from it
 		GetMappings(Contains, CMStringView(In.data() + x), MappingsStorage);
 		if (MappingsStorage.Size() == 0)
@@ -418,10 +418,12 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 	return std::pair<int, int>(-1, -1);
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex, int StatePushLimit)
+std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
 {
-	assert(StartIndex <= In.size() && StartIndex >= 0);
-	return IndexOfFromView(CMStringView(In), CMStringView(Contains), MatchRepeating, StartIndex, StatePushLimit);
+	if (StartIndex >= In.size() || StartIndex < 0)
+		return std::pair<int, int>(-1, -1);
+
+	return IndexOfFromView(CMStringView(In), CMStringView(Contains), MatchRepeating, StartIndex, StartFromEnd, StatePushLimit);
 }
 
 ConfusableMatcher::~ConfusableMatcher()

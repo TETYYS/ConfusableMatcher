@@ -28,7 +28,7 @@ void FreeConfusableMatcher(CMHandle In)
 	delete (ConfusableMatcher*)In;
 }
 
-uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, int StatePushLimit)
+uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
 {
 	int ret[2];
 	auto rawRet = ((ConfusableMatcher*)CM)->IndexOf(
@@ -36,6 +36,7 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 		Contains,
 		MatchRepeating,
 		StartIndex,
+		StartFromEnd,
 		StatePushLimit);
 	ret[0] = rawRet.first;
 	ret[1] = rawRet.second;
