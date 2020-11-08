@@ -28,9 +28,8 @@ void FreeConfusableMatcher(CMHandle In)
 	delete (ConfusableMatcher*)In;
 }
 
-uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
+CMIntPair StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
 {
-	int ret[2];
 	auto rawRet = ((ConfusableMatcher*)CM)->IndexOf(
 		In,
 		Contains,
@@ -38,10 +37,10 @@ uint64_t StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeatin
 		StartIndex,
 		StartFromEnd,
 		StatePushLimit);
-	ret[0] = rawRet.first;
-	ret[1] = rawRet.second;
 
-	return ret[0] | ((uint64_t)ret[1] << 32);
+	return CMIntPair {
+		rawRet.first, rawRet.second
+	};
 }
 
 uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t OutputSize)
