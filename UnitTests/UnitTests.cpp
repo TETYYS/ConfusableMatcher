@@ -599,6 +599,65 @@ void Test25()
 	ASSERT_EQUAL(3, res.second);
 }
 
+void Test26()
+{
+	auto map = GetDefaultMap();
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("AAA", "A", true, 0);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(3, res.second);
+}
+
+void Test27()
+{
+	auto map = GetDefaultMap();
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("BB AAA", "A", true, 0);
+
+	ASSERT_EQUAL(3, res.first);
+	ASSERT_EQUAL(3, res.second);
+}
+
+void Test28()
+{
+	auto map = GetDefaultMap();
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("N|\\|NC", "N", true, 0);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(5, res.second);
+}
+
+void Test29()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
+	map.push_back(std::pair<std::string, std::string>("N", "//A"));
+	map.push_back(std::pair<std::string, std::string>("N", "//"));
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("N/\\///AN", "N", true, 0);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(8, res.second);
+}
+
+void Test30()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("N", "/"));
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("N////////////////////////////////////////////////", "N", true, 0, false, 30);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_GREATER(res.second, 10);
+}
+
 int main()
 {
 	cute::suite s;
@@ -628,6 +687,11 @@ int main()
 	s.push_back(CUTE(Test23));
 	s.push_back(CUTE(Test24));
 	s.push_back(CUTE(Test25));
+	s.push_back(CUTE(Test26));
+	s.push_back(CUTE(Test27));
+	s.push_back(CUTE(Test28));
+	s.push_back(CUTE(Test29));
+	s.push_back(CUTE(Test30));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

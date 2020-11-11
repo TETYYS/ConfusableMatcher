@@ -170,6 +170,8 @@ class ConfusableMatcher
 		IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit);
 	std::pair<int, int>
 		IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit);
+	int
+		GetRepeatingLength(CMStringView In, CMStringView FullContains, int *StatePushes, int StatePushLimit);
 
 	public:
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);

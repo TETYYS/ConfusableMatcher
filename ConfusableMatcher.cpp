@@ -220,6 +220,50 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 	return;
 }
 
+int ConfusableMatcher::GetRepeatingLength(CMStringView In, CMStringView FullContains, int *StatePushes, int StatePushLimit)
+{
+	std::stack<CMStringView> inStates;
+	StackVector<std::pair<CMStringView, CMStringView>> mappingsStorage;
+	const int originalInSize = In.size();
+	int longestRepeatingState = 0;
+
+	assert(In.size() > 0);
+	assert(FullContains.size() > 0);
+
+	while (true) {
+		if (In.size() == 0) {
+			// Ate all of `In`, so all of the string consists of repeating chars
+			return originalInSize;
+		}
+		
+		if (originalInSize - In.size() > longestRepeatingState)
+			longestRepeatingState = originalInSize - In.size();
+
+		// Try to match repeating substring
+		GetMappings(FullContains, In, mappingsStorage);
+		auto mappingsSize = mappingsStorage.Size();
+
+		if (mappingsSize != 0) {
+			*StatePushes += mappingsSize;
+			if (*StatePushes > StatePushLimit) {
+				// Best we can do irhgt now
+				return longestRepeatingState;
+			}
+
+			// Push every new matching path
+			for (auto x = 0;x < mappingsStorage.CurSize;x++) {
+				auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
+
+				inStates.push(CMStringView(In.data() + item.second.size()));
+			}
+		} else if (inStates.size() == 0)
+			return longestRepeatingState;
+
+		In = inStates.top();
+		inStates.pop();
+	}
+}
+
 std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit)
 {
 	std::stack<MatchingState> matchingStates;
@@ -250,27 +294,16 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 					return std::pair<int, int>(-2, -2);
 
 				// Push every new matching path
-				if (mappingsStorage.IsStack) {
-					for (auto x = 0;x < mappingsStorage.CurSize;x++) {
-						matchingStates.push(MatchingState(
-							CMStringView(State.In.data() + mappingsStorage.Stack[x].second.size()),
-							State.Contains,
-							State.StartingIndex,
-							State.MatchedChars + mappingsStorage.Stack[x].second.size(),
-							State.LastMatched
-						));
-					}
-				} else {
-					// Heap ver., code kinda repeats but I'm not dealing with custom iterators
-					for (auto it = mappingsStorage.Heap.begin();it != mappingsStorage.Heap.end();it++) {
-						matchingStates.push(MatchingState(
-							CMStringView(State.In.data() + it->second.size()),
-							State.Contains,
-							State.StartingIndex,
-							State.MatchedChars + it->second.size(),
-							State.LastMatched
-						));
-					}
+				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
+					auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
+
+					matchingStates.push(MatchingState(
+						CMStringView(State.In.data() + item.second.size()),
+						State.Contains,
+						State.StartingIndex,
+						State.MatchedChars + item.second.size(),
+						State.LastMatched
+					));
 				}
 			}
 		}
@@ -308,35 +341,21 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 			if (*StatePushes > StatePushLimit)
 				return std::pair<int, int>(-2, -2);
 
-			if (mappingsStorage.IsStack) {
-				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
-					// If we were about to eat all of `Contains`, that means we found the whole thing
-					if (mappingsStorage.Stack[x].first.size() == State.Contains.size())
-						return std::pair<int, int>(State.StartingIndex, State.MatchedChars + mappingsStorage.Stack[x].second.size());
+			for (auto x = 0;x < mappingsStorage.CurSize;x++) {
+				auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
 
-					// Push new path
-					matchingStates.push(MatchingState(
-						CMStringView(State.In.data() + mappingsStorage.Stack[x].second.size()),
-						CMStringView(State.Contains.data() + mappingsStorage.Stack[x].first.size()),
-						State.StartingIndex,
-						State.MatchedChars + mappingsStorage.Stack[x].second.size(),
-						CMStringView(State.Contains.data(), mappingsStorage.Stack[x].first.size())
-					));
-				}
-			} else {
-				// Heap ver.
-				for (auto it = mappingsStorage.Heap.begin();it != mappingsStorage.Heap.end();it++) {
-					if (it->first.size() == State.Contains.size())
-						return std::pair<int, int>(State.StartingIndex, State.MatchedChars + it->second.size());
+				// If we were about to eat all of `Contains`, that means we found the whole thing
+				if (item.first.size() == State.Contains.size())
+					return std::pair<int, int>(State.StartingIndex, State.MatchedChars + item.second.size());
 
-					matchingStates.push(MatchingState(
-						CMStringView(State.In.data() + it->second.size()),
-						CMStringView(State.Contains.data() + it->first.size()),
-						State.StartingIndex,
-						State.MatchedChars + it->second.size(),
-						CMStringView(State.Contains.data(), it->first.size())
-					));
-				}
+				// Push new path
+				matchingStates.push(MatchingState(
+					CMStringView(State.In.data() + item.second.size()),
+					CMStringView(State.Contains.data() + item.first.size()),
+					State.StartingIndex,
+					State.MatchedChars + item.second.size(),
+					CMStringView(State.Contains.data(), item.first.size())
+				));
 			}
 		} else {
 			// We didn't put any new paths into stack so check if we depleted all paths
@@ -375,44 +394,33 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 		if (statePushes > StatePushLimit)
 			return std::pair<int, int>(-2, -2);
 
-		if (MappingsStorage.IsStack) {
-			for (auto i = 0;i < MappingsStorage.CurSize;i++) {
-				// Already found the whole thing when searching for beginning
-				if (MappingsStorage.Stack[i].first.size() == Contains.size())
-					return std::pair<int, int>(x, MappingsStorage.Stack[i].second.size());
+		for (auto i = 0;i < MappingsStorage.CurSize;i++) {
+			auto item = MappingsStorage.IsStack ? MappingsStorage.Stack[i] : MappingsStorage.Heap[i];
 
-				auto contains = IndexOfInner(MatchingState(
-					CMStringView(In.data() + x + MappingsStorage.Stack[i].second.size()),
-					CMStringView(Contains.data() + MappingsStorage.Stack[i].first.size()),
-					x,
-					MappingsStorage.Stack[i].second.size(),
-					CMStringView(Contains.data(), MappingsStorage.Stack[i].first.size())
-				), MatchRepeating, &statePushes, StatePushLimit);
+			// Already found the whole thing when searching for beginning
+			if (item.first.size() == Contains.size()) {
+				// But lets check if it repeats before returning
 
-				if (contains.first == -1)
-					continue;
+				auto retLength = item.second.size();
 
-				return contains;
+				if (MatchRepeating) {
+					retLength = GetRepeatingLength(CMStringView(In.data() + x), Contains, &statePushes, StatePushLimit);
+				}
+				return std::pair<int, int>(x, retLength);
 			}
-		} else {
-			// Heap ver.
-			for (auto it = MappingsStorage.Heap.begin();it != MappingsStorage.Heap.end();it++) {
-				if (it->first.size() == Contains.size())
-					return std::pair<int, int>(x, it->second.size());
 
-				auto contains = IndexOfInner(MatchingState(
-					CMStringView(In.data() + x + it->second.size()),
-					CMStringView(Contains.data() + it->first.size()),
-					x,
-					it->second.size(),
-					CMStringView(Contains.data(), it->first.size())
-				), MatchRepeating, &statePushes, StatePushLimit);
+			auto contains = IndexOfInner(MatchingState(
+				CMStringView(In.data() + x + item.second.size()),
+				CMStringView(Contains.data() + item.first.size()),
+				x,
+				item.second.size(),
+				CMStringView(Contains.data(), item.first.size())
+			), MatchRepeating, &statePushes, StatePushLimit);
 
-				if (contains.first == -1)
-					continue;
+			if (contains.first == -1)
+				continue;
 
-				return contains;
-			}
+			return contains;
 		}
 	}
 	return std::pair<int, int>(-1, -1);
