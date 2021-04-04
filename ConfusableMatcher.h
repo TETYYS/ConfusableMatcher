@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "Config.h"
+#include "Shared.h"
 
 #ifdef WIN32
 	#include <string_view>
@@ -95,8 +96,8 @@ public:
 };
 
 struct CMString {
-    char *Str;
-    size_t Len;
+	char *Str;
+	size_t Len;
 
 public:
 	CMString()
@@ -128,6 +129,40 @@ public:
 		delete Str;
 	}
 };
+
+const std::string WORD_BOUNDARIES[] = {
+	"\U00000020",
+	"\U000000A0", // NO-BREAK SPACE
+	"\U00001680", // OGHAM SPACE MARK
+	"\U0000180E", // MONGOLIAN VOWEL SEPARATOR
+	"\U00002000", // EN QUAD
+	"\U00002001", // EM QUAD
+	"\U00002002", // EN SPACE (nut)
+	"\U00002003", // EM SPACE (mutton)
+	"\U00002004", // THREE-PER-EM SPACE (thick space)
+	"\U00002005", // FOUR-PER-EM SPACE (mid space)
+	"\U00002006", // SIX-PER-EM SPACE
+	"\U00002007", // FIGURE SPACE
+	"\U00002008", // PUNCTUATION SPACE
+	"\U00002009", // THIN SPACE
+	"\U0000200A", // HAIR SPACE
+	"\U0000200B", // ZERO WIDTH SPACE
+	"\U0000202F", // NARROW NO-BREAK SPACE
+	"\U0000205F", // MEDIUM MATHEMATICAL SPACE
+	"\U00003000", // IDEOGRAPHIC SPACE
+	"\U0000FEFF", // ZERO WIDTH NO-BREAK SPACE
+	",",
+	".",
+	":",
+	";",
+	"\"",
+	"'"
+};
+
+const int NO_MATCH = -1;
+const int EXCEEDED_STATE_PUSH_LIMIT = -2;
+const int WORD_BOUNDARY_FAIL_START = -3;
+const int WORD_BOUNDARY_FAIL_END = -4;
 
 class ConfusableMatcher
 {
@@ -167,18 +202,18 @@ class ConfusableMatcher
 	void
 		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage);
 	std::pair<int, int>
-		IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit);
+		IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
 	std::pair<int, int>
-		IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit);
+		IndexOfInner(CMStringView FullIn, MatchingState State, size_t *StatePushes, CMOptions Options);
 	int
-		GetRepeatingLength(CMStringView In, CMStringView FullContains, int *StatePushes, int StatePushLimit);
+		CheckWordBoundary(CMStringView In, CMStringView Match);
 
 	public:
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);
 	bool
 		AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
 	std::pair<int, int>
-		IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex = 0, bool StartFromEnd = false, int StatePushLimit = 1000);
+		IndexOf(std::string In, std::string Contains, CMOptions Options);
 	bool
 		AddSkip(std::string In);
 	void

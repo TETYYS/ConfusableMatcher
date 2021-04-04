@@ -47,9 +47,11 @@ extern "C" {
 		int32_t Second;
 	} CMIntPair;
 
+#include "Shared.h"
+
 	EXPORTED CMHandle __cdecl InitConfusableMatcher(CMMap Map, char** IgnoreList, int IgnoreCount, bool AddDefaultValues);
 	EXPORTED void __cdecl FreeConfusableMatcher(CMHandle In);
-	EXPORTED CMIntPair __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit);
+	EXPORTED CMIntPair __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, CMOptions Options);
 	EXPORTED uint32_t __cdecl GetKeyMappings(CMHandle CM, char* In, const char** Output, uint32_t OutputSize);
 #ifdef __cplusplus
 }

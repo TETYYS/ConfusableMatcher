@@ -14,10 +14,12 @@ void Test1()
 	map.push_back(std::pair<std::string, std::string>("C", "S"));
 	map.push_back(std::pair<std::string, std::string>("E", "T"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
-	auto res = matcher.IndexOf("TEST", "NICE", false, 0);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 4);
+	auto res = matcher.IndexOf("TEST", "NICE", opts);
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(4, res.second);
 }
 
 void Test2()
@@ -27,20 +29,25 @@ void Test2()
 	map.push_back(std::pair<std::string, std::string>("V", "VA"));
 	map.push_back(std::pair<std::string, std::string>("V", "VO"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
-	auto res = matcher.IndexOf("VV", "VAVOVAVO", false, 0);
+	auto res = matcher.IndexOf("VV", "VAVOVAVO", opts);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
-	res = matcher.IndexOf("VAVOVAVO", "VV", false, 0);
+	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
 	ASSERT(res.first == 0 || res.first == 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", false, 4);
+	opts.StartIndex = 4;
+	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
 	ASSERT_EQUAL(res.first, 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", false, 2);
+	opts.StartIndex = 2;
+	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
 	ASSERT(res.first == 2 || res.first == 4);
 	ASSERT(res.second == 3 || res.second == 4);
-	res = matcher.IndexOf("VAVOVAVO", "VV", false, 3);
+	opts.StartIndex = 3;
+	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
 	ASSERT_EQUAL(res.first, 4);
 	ASSERT(res.second == 3 || res.second == 4);
 }
@@ -52,8 +59,10 @@ void Test3()
 	map.push_back(std::pair<std::string, std::string>("A", "\U00000002\U00000003"));
 	map.push_back(std::pair<std::string, std::string>("B", "\U000000FA\U000000FF"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
-	auto res = matcher.IndexOf("\U00000002\U00000003\U000000FA\U000000FF", "AB", false, 0);
+	auto res = matcher.IndexOf("\U00000002\U00000003\U000000FA\U000000FF", "AB", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
 }
@@ -65,8 +74,11 @@ void Test4()
 	map.push_back(std::pair<std::string, std::string>("S", "$"));
 	map.push_back(std::pair<std::string, std::string>("D", "[)"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { "_", " " });
-	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", true, 0);
+	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 11);
 }
@@ -79,8 +91,10 @@ void Test5()
 	map.push_back(std::pair<std::string, std::string>("N", "/\\"));
 	map.push_back(std::pair<std::string, std::string>("I", "/"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
-	auto res = matcher.IndexOf("/\\/CE", "NICE", false, 0);
+	auto res = matcher.IndexOf("/\\/CE", "NICE", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 5);
 }
@@ -93,14 +107,17 @@ void Test6()
 	map.push_back(std::pair<std::string, std::string>("V", "\\/"));
 	map.push_back(std::pair<std::string, std::string>("I", "/"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
-	auto res = matcher.IndexOf("I/\\/AM", "INAN", true, 0);
+	auto res = matcher.IndexOf("I/\\/AM", "INAN", opts);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
-	res = matcher.IndexOf("I/\\/AM", "INAM", true, 0);
+	res = matcher.IndexOf("I/\\/AM", "INAM", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
-	res = matcher.IndexOf("I/\\/AM", "IIVAM", true, 0);
+	res = matcher.IndexOf("I/\\/AM", "IIVAM", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 6);
 }
@@ -144,8 +161,12 @@ void Test7()
 	auto map = GetDefaultMap();
 
 	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { "_", "%", "$" });
-	auto res = matcher.IndexOf(in, "NIGGER", true, 0);
+	auto res = matcher.IndexOf(in, "NIGGER", opts);
 
 	ASSERT(
 		(res.first == 64 && res.second == 57) ||
@@ -200,11 +221,15 @@ void LidlNormalizerTests()
 		std::make_tuple(std::vector<std::string>({ "\U0001f170\U0001f171\U0001f172\U0001f173\U0001f174\U0001f175\U0001f176\U0001f177\U0001f178\U0001f179\U0001f17a\U0001f17b\U0001f17c\U0001f17d\U0001f17e\U0001f17f\U0001f180\U0001f181\U0001f182\U0001f183\U0001f184\U0001f185\U0001f186\U0001f187\U0001f188\U0001f189", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector<int>({ 0, 104 }))
 	};
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
+
 	for (auto entry : data) {
 		std::vector<std::string> chr;
 		std::vector<int> eq;
 		std::tie(chr, eq) = entry;
-		auto res = matcher.IndexOf(chr[0], chr[1], true, 0);
+		auto res = matcher.IndexOf(chr[0], chr[1], opts);
 		ASSERT_EQUAL(res.first, eq[0]);
 		ASSERT_EQUAL(res.second, eq[1]);
 	}
@@ -214,12 +239,13 @@ void Test8()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { "\U00000332", "\U00000305", "[", "]" });
 	auto res = matcher.IndexOf(
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890",
-		false,
-		0);
+		opts);
 	ASSERT_EQUAL(res.first, 5);
 	ASSERT_EQUAL(res.second, 397);
 }
@@ -248,15 +274,14 @@ void Test9()
 	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQR"));
 	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQRS"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 1000;
 	auto matcher = ConfusableMatcher(map, { });
 
 	auto res = matcher.IndexOf(
 		"ABCDEFGHIJKLMNOPQRS",
 		"B",
-		false,
-		0,
-		false,
-		1000);
+		opts);
 	ASSERT(res.first == 0 || res.first == 1);
 	ASSERT_EQUAL(res.second, 1);
 
@@ -300,25 +325,22 @@ void Test9()
 	map.push_back(std::pair<std::string, std::string>("B", "PQR"));
 	map.push_back(std::pair<std::string, std::string>("B", "PQ"));
 	map.push_back(std::pair<std::string, std::string>("B", "P"));
+
 	auto matcher2 = ConfusableMatcher(map, { });
 	
 	res = matcher2.IndexOf(
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
 		"BB",
-		false,
-		0,
-		false,
-		1000);
+		opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 2);
 
+	opts.MatchRepeating = true;
+	opts.StatePushLimit = 2000;
 	res = matcher2.IndexOf(
 		"PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789",
 		"BBBBBBBBBBBBBBBBBBBBBBBBBBB",
-		true,
-		0,
-		false,
-		2000);
+		opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT(res.second >= 547 && res.second <= 567);
 }
@@ -326,12 +348,16 @@ void Test9()
 void Test10()
 {
 	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
-	auto res = matcher.IndexOf(":)", "", true, 0);
+	auto res = matcher.IndexOf(":)", "", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 0);
 
-	res = matcher.IndexOf("", ":)", true, 0);
+	res = matcher.IndexOf("", ":)", opts);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -347,7 +373,10 @@ void Test11()
 	matcher.AddMapping("A", "A", false);
 	matcher.AddMapping("A", "A", false);
 
-	auto res = matcher.IndexOf("ABAAA", "ABAR", true, 0, false, 1000);
+	CMOptions opts = { };
+	opts.MatchRepeating = true;
+	opts.StatePushLimit = 1000;
+	auto res = matcher.IndexOf("ABAAA", "ABAR", opts);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -355,14 +384,17 @@ void Test11()
 void Test12()
 {
 	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
 
-	auto res = matcher.IndexOf("A", "A", false, 0);
+	auto res = matcher.IndexOf("A", "A", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 1);
 
 	auto matcher2 = ConfusableMatcher(map, { }, false);
-	res = matcher2.IndexOf("A", "A", false, 0);
+	res = matcher2.IndexOf("A", "A", opts);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -394,22 +426,26 @@ void Test13()
 void Test14()
 {
 	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
 	auto running = true;
 
-	std::thread t1([&matcher, &running] {
+	std::thread t1([&matcher, &running, opts] {
 		while (running) {
-			matcher.IndexOf("ASD", "ZXC", true, 0);
+			matcher.IndexOf("ASD", "ZXC", opts);
 		}
 	});
-	std::thread t2([&matcher, &running] {
+	std::thread t2([&matcher, &running, opts] {
 		while (running) {
-			matcher.IndexOf("LIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH", "NIGGAR", true, 0);
+			matcher.IndexOf("LIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH NLIGGER CMONBRUH", "NIGGAR", opts);
 		}
 	});
-	std::thread t3([&matcher, &running] {
+	std::thread t3([&matcher, &running, opts] {
 		while (running) {
-			matcher.IndexOf("NIGGAR", "NIGGER", true, 0);
+			matcher.IndexOf("NIGGAR", "NIGGER", opts);
 		}
 	});
 
@@ -434,7 +470,10 @@ void Test15()
 
 	matcher.AddMapping(".", ".", false);
 
-	auto res = matcher.IndexOf("FOLLOWONBOT.COM", "FOLLOWONBOT.COM", true, 0);
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
+	auto res = matcher.IndexOf("FOLLOWONBOT.COM", "FOLLOWONBOT.COM", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 15);
 }
@@ -447,7 +486,10 @@ void Test16()
 
 	auto matcher = ConfusableMatcher(map, { });
 
-	auto res = matcher.IndexOf("/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/", "NNNNNNNNNNNNNNNA", true, 0);
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
+	auto res = matcher.IndexOf("/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/", "NNNNNNNNNNNNNNNA", opts);
 	ASSERT_EQUAL(res.first, -2);
 	ASSERT_EQUAL(res.second, -2);
 }
@@ -460,7 +502,10 @@ void Test17()
 
 	auto matcher = ConfusableMatcher(map, {});
 
-	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", true, 0, false, 100000);
+	CMOptions opts = { };
+	opts.MatchRepeating = true;
+	opts.StatePushLimit = 100000;
+	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", opts);
 	ASSERT_EQUAL(res.first, -1);
 	ASSERT_EQUAL(res.second, -1);
 }
@@ -475,7 +520,10 @@ void Test18()
 
 	auto matcher = ConfusableMatcher(map, {});
 
-	auto res = matcher.IndexOf("N12345M", "NAM", true, 0);
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
+	auto res = matcher.IndexOf("N12345M", "NAM", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 7);
 }
@@ -489,7 +537,10 @@ void Test19()
 
 	auto matcher = ConfusableMatcher(map, {});
 
-	auto res = matcher.IndexOf("111111", "ABC", true, 0);
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
+	auto res = matcher.IndexOf("111111", "ABC", opts);
 	ASSERT_EQUAL(res.first, 0);
 	ASSERT_EQUAL(res.second, 3);
 }
@@ -558,13 +609,19 @@ void Test23()
 	auto map = GetDefaultMap();
 
 	std::string in = "AA BB CC AA FF AA RR";
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf(in, "AA", true);
+	auto res = matcher.IndexOf(in, "AA", opts);
 
 	ASSERT_EQUAL(0, res.first);
 	ASSERT_EQUAL(2, res.second);
 
-	res = matcher.IndexOf(in, "AA", true, in.size() - 1, true);
+	opts.StartIndex = in.size() - 1;
+	opts.StartFromEnd = true;
+	res = matcher.IndexOf(in, "AA", opts);
 
 	ASSERT_EQUAL(15, res.first);
 	ASSERT_EQUAL(2, res.second);
@@ -575,8 +632,14 @@ void Test24()
 	auto map = GetDefaultMap();
 
 	std::string in = "DASD";
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
+	opts.StartIndex = in.size() - 1;
+	opts.StartFromEnd = true;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf(in, "D", true, in.size() - 1, true);
+	auto res = matcher.IndexOf(in, "D", opts);
 
 	ASSERT_EQUAL(3, res.first);
 	ASSERT_EQUAL(1, res.second);
@@ -587,13 +650,20 @@ void Test25()
 	auto map = GetDefaultMap();
 
 	std::string in = "ASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASASB";
+
+	CMOptions opts = { };
+	opts.MatchRepeating = true;
+	opts.StartFromEnd = false;
+	opts.StatePushLimit = 20;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf(in, "ASB", true, 0, false, 20);
+	auto res = matcher.IndexOf(in, "ASB", opts);
 
 	ASSERT_EQUAL(-2, res.first);
 	ASSERT_EQUAL(-2, res.second);
 
-	res = matcher.IndexOf(in, "ASB", true, in.size() - 1, true, 20);
+	opts.StartFromEnd = true;
+	opts.StartIndex = in.size() - 1;
+	res = matcher.IndexOf(in, "ASB", opts);
 
 	ASSERT_EQUAL(92, res.first);
 	ASSERT_EQUAL(3, res.second);
@@ -603,8 +673,11 @@ void Test26()
 {
 	auto map = GetDefaultMap();
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf("AAA", "A", true, 0);
+	auto res = matcher.IndexOf("AAA", "A", opts);
 
 	ASSERT_EQUAL(0, res.first);
 	ASSERT_EQUAL(3, res.second);
@@ -614,8 +687,11 @@ void Test27()
 {
 	auto map = GetDefaultMap();
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf("BB AAA", "A", true, 0);
+	auto res = matcher.IndexOf("BB AAA", "A", opts);
 
 	ASSERT_EQUAL(3, res.first);
 	ASSERT_EQUAL(3, res.second);
@@ -625,8 +701,11 @@ void Test28()
 {
 	auto map = GetDefaultMap();
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf("N|\\|NC", "N", true, 0);
+	auto res = matcher.IndexOf("N|\\|NC", "N", opts);
 
 	ASSERT_EQUAL(0, res.first);
 	ASSERT_EQUAL(5, res.second);
@@ -639,8 +718,11 @@ void Test29()
 	map.push_back(std::pair<std::string, std::string>("N", "//A"));
 	map.push_back(std::pair<std::string, std::string>("N", "//"));
 
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf("N/\\///AN", "N", true, 0);
+	auto res = matcher.IndexOf("N/\\///AN", "N", opts);
 
 	ASSERT_EQUAL(0, res.first);
 	ASSERT_EQUAL(8, res.second);
@@ -651,11 +733,233 @@ void Test30()
 	std::vector<std::pair<std::string, std::string>> map;
 	map.push_back(std::pair<std::string, std::string>("N", "/"));
 
+	CMOptions opts = { };
+	opts.MatchRepeating = true;
+	opts.StatePushLimit = 60;
 	auto matcher = ConfusableMatcher(map, {});
-	auto res = matcher.IndexOf("N////////////////////////////////////////////////", "N", true, 0, false, 30);
+	auto res = matcher.IndexOf("N////////////////////////////////////////////////", "N", opts);
 
 	ASSERT_EQUAL(0, res.first);
 	ASSERT_GREATER(res.second, 10);
+}
+
+void Test31()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("X", "X", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(1, res.second);
+
+	res = matcher.IndexOf("aX", "X", opts);
+
+	ASSERT_EQUAL(-3, res.first);
+	ASSERT_EQUAL(-3, res.second);
+
+	res = matcher.IndexOf("Xa", "X", opts);
+
+	ASSERT_EQUAL(-4, res.first);
+	ASSERT_EQUAL(-4, res.second);
+
+	res = matcher.IndexOf("a X", "X", opts);
+
+	ASSERT_EQUAL(2, res.first);
+	ASSERT_EQUAL(1, res.second);
+
+	res = matcher.IndexOf("X a", "X", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(1, res.second);
+
+	res = matcher.IndexOf("X;duper", "X", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(1, res.second);
+
+	res = matcher.IndexOf("yes\uFEFFX", "X", opts);
+
+	ASSERT_EQUAL(6, res.first);
+	ASSERT_EQUAL(1, res.second);
+}
+
+void Test32()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("QQQ", "Q", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(3, res.second);
+
+	res = matcher.IndexOf("aQQQ", "Q", opts);
+
+	ASSERT_EQUAL(-3, res.first);
+	ASSERT_EQUAL(-3, res.second);
+
+	res = matcher.IndexOf("QQQa", "Q", opts);
+
+	ASSERT(res.first == -4 || res.first == -3);
+	ASSERT(res.second == -4 || res.second == -3);
+
+	res = matcher.IndexOf("a QQQ", "Q", opts);
+
+	ASSERT_EQUAL(2, res.first);
+	ASSERT_EQUAL(3, res.second);
+
+	res = matcher.IndexOf("QQQ a", "Q", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(3, res.second);
+
+	res = matcher.IndexOf("QQQ;duper", "Q", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(3, res.second);
+
+	res = matcher.IndexOf("yes\u202FQQQ", "Q", opts);
+
+	ASSERT_EQUAL(6, res.first);
+	ASSERT_EQUAL(3, res.second);
+}
+
+void Test33()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	std::string in = "a QBQQ";
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+	opts.StartFromEnd = true;
+	opts.StartIndex = in.size() - 1;
+
+	auto matcher = ConfusableMatcher(map, { "B" });
+	auto res = matcher.IndexOf(in, "Q", opts);
+
+	ASSERT_EQUAL(2, res.first);
+	ASSERT_EQUAL(4, res.second);
+}
+
+void Test34()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("SUPER", "SUPER", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(5, res.second);
+
+	res = matcher.IndexOf("aSUPER", "SUPER", opts);
+
+	ASSERT_EQUAL(-3, res.first);
+	ASSERT_EQUAL(-3, res.second);
+
+	res = matcher.IndexOf("SUPERa", "SUPER", opts);
+
+	ASSERT_EQUAL(-4, res.first);
+	ASSERT_EQUAL(-4, res.second);
+
+	res = matcher.IndexOf("a SUPER", "SUPER", opts);
+
+	ASSERT_EQUAL(2, res.first);
+	ASSERT_EQUAL(5, res.second);
+
+	res = matcher.IndexOf("SUPER a", "SUPER", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(5, res.second);
+
+	res = matcher.IndexOf("SUPER;duper", "SUPER", opts);
+
+	ASSERT_EQUAL(0, res.first);
+	ASSERT_EQUAL(5, res.second);
+
+	res = matcher.IndexOf("yes\u202FSUPER", "SUPER", opts);
+
+	ASSERT_EQUAL(6, res.first);
+	ASSERT_EQUAL(5, res.second);
+}
+
+void Test35()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>(" ", " "));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+
+	auto matcher = ConfusableMatcher(map, { " " });
+	auto res = matcher.IndexOf("a Q Q f", "Q Q", opts);
+
+	ASSERT_EQUAL(2, res.first);
+	ASSERT_EQUAL(3, res.second);
+
+	res = matcher.IndexOf("aQ Q f", "Q Q", opts);
+
+	ASSERT_EQUAL(-3, res.first);
+	ASSERT_EQUAL(-3, res.second);
+
+	res = matcher.IndexOf("a Q Qf", "Q Q", opts);
+
+	ASSERT_EQUAL(-4, res.first);
+	ASSERT_EQUAL(-4, res.second);
+}
+
+void Test36()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>(" ", " "));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+
+	auto matcher = ConfusableMatcher(map, { " " });
+	auto res = matcher.IndexOf("a Q Q Q f", "Q Q", opts);
+
+	ASSERT((res.first == 2 && res.second == 3) || (res.first == 4 && res.second == 3));
+}
+
+void Test37()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("a", "a"));
+	map.push_back(std::pair<std::string, std::string>("s", "s"));
+	map.push_back(std::pair<std::string, std::string>(" ", " "));
+	map.push_back(std::pair<std::string, std::string>("i", "i"));
+	map.push_back(std::pair<std::string, std::string>("m", "m"));
+	map.push_back(std::pair<std::string, std::string>("p", "p"));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, { " " });
+	auto res = matcher.IndexOf("as simp", "simp", opts);
+
+	ASSERT_EQUAL(3, res.first);
+	ASSERT_EQUAL(4, res.second);
 }
 
 int main()
@@ -692,6 +996,13 @@ int main()
 	s.push_back(CUTE(Test28));
 	s.push_back(CUTE(Test29));
 	s.push_back(CUTE(Test30));
+	s.push_back(CUTE(Test31));
+	s.push_back(CUTE(Test32));
+	s.push_back(CUTE(Test33));
+	s.push_back(CUTE(Test34));
+	s.push_back(CUTE(Test35));
+	s.push_back(CUTE(Test36));
+	s.push_back(CUTE(Test37));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

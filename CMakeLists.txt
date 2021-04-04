@@ -23,10 +23,10 @@ endif()
 include_directories(RunUnitTests "UnitTests/CUTE" ".")
 add_test(RunUnitTests RunUnitTests)
 
-add_library(ConfusableMatcherStatic STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h")
+add_library(ConfusableMatcherStatic STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h")
 set_target_properties(ConfusableMatcherStatic PROPERTIES OUTPUT_NAME confusablematcher)
 
-add_library(ConfusableMatcher SHARED "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h")
+add_library(ConfusableMatcher SHARED "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h")
 set_target_properties(ConfusableMatcher PROPERTIES PREFIX "")
 
 target_link_libraries(ConfusableMatcherStatic ${CMAKE_THREAD_LIBS_INIT})

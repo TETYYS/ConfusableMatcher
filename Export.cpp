@@ -28,15 +28,12 @@ void FreeConfusableMatcher(CMHandle In)
 	delete (ConfusableMatcher*)In;
 }
 
-CMIntPair StringIndexOf(CMHandle CM, char *In, char *Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
+CMIntPair StringIndexOf(CMHandle CM, char *In, char *Contains, CMOptions Options)
 {
 	auto rawRet = ((ConfusableMatcher*)CM)->IndexOf(
 		In,
 		Contains,
-		MatchRepeating,
-		StartIndex,
-		StartFromEnd,
-		StatePushLimit);
+		Options);
 
 	return CMIntPair {
 		rawRet.first, rawRet.second

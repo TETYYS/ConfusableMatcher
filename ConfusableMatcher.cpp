@@ -220,62 +220,72 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 	return;
 }
 
-int ConfusableMatcher::GetRepeatingLength(CMStringView In, CMStringView FullContains, int *StatePushes, int StatePushLimit)
+int ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringView Match)
 {
-	std::stack<CMStringView> inStates;
-	StackVector<std::pair<CMStringView, CMStringView>> mappingsStorage;
-	const int originalInSize = In.size();
-	int longestRepeatingState = 0;
+	bool startPass = false, endPass = false;
 
-	assert(In.size() > 0);
-	assert(FullContains.size() > 0);
+	if (In.data() == Match.data()) {
+		startPass = true;
+	} else {
+		for (auto a = 0;a < std::extent<decltype(WORD_BOUNDARIES)>::value;a++) {
+			auto wb = WORD_BOUNDARIES[a];
 
-	while (true) {
-		if (In.size() == 0) {
-			// Ate all of `In`, so all of the string consists of repeating chars
-			return originalInSize;
+			if (Match.data() - wb.size() >= In.data() && CMStringView(Match.data() - wb.size(), wb.size()) == wb) {
+				startPass = true;
+				break;
+			}
 		}
-		
-		if (originalInSize - In.size() > longestRepeatingState)
-			longestRepeatingState = originalInSize - In.size();
-
-		// Try to match repeating substring
-		GetMappings(FullContains, In, mappingsStorage);
-		auto mappingsSize = mappingsStorage.Size();
-
-		if (mappingsSize != 0) {
-			*StatePushes += mappingsSize;
-			if (*StatePushes > StatePushLimit) {
-				// Best we can do irhgt now
-				return longestRepeatingState;
-			}
-
-			// Push every new matching path
-			for (auto x = 0;x < mappingsStorage.CurSize;x++) {
-				auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
-
-				inStates.push(CMStringView(In.data() + item.second.size()));
-			}
-		} else if (inStates.size() == 0)
-			return longestRepeatingState;
-
-		In = inStates.top();
-		inStates.pop();
 	}
+
+	if (!startPass) {
+		return WORD_BOUNDARY_FAIL_START;
+	}
+
+	if (In.data() + In.size() == Match.data() + Match.size()) {
+		endPass = true;
+	} else {
+		for (auto a = 0;a < std::extent<decltype(WORD_BOUNDARIES)>::value;a++) {
+			auto wb = WORD_BOUNDARIES[a];
+
+			if (Match.data() + Match.size() + wb.size() <= In.data() + In.size() && CMStringView(Match.data() + Match.size(), wb.size()) == WORD_BOUNDARIES[a]) {
+				endPass = true;
+				break;
+			}
+		}
+	}
+
+	if (!endPass) {
+		return WORD_BOUNDARY_FAIL_END;
+	}
+
+	return 0;
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool MatchRepeating, int *StatePushes, int StatePushLimit)
+std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, MatchingState State, size_t *StatePushes, CMOptions Options)
 {
 	std::stack<MatchingState> matchingStates;
 	StackVector<std::pair<CMStringView, CMStringView>> mappingsStorage;
-
-	assert(State.Contains.size() > 0);
+	int matchResult = NO_MATCH;
 
 	while (true) {
 		if (State.In.size() == 0) {
 			// Current state ate all of `In` and we have no other state to get from stack
-			if (matchingStates.empty())
-				return std::pair<int, int>(-1, -1);
+			if (matchingStates.empty()) {
+				if (State.Contains.size() == 0) {
+					int wordBoundaryResult = 0;
+
+					if (Options.MatchOnWordBoundary) {
+						wordBoundaryResult = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars));
+					}
+
+					if (wordBoundaryResult == 0)
+						return std::pair<int, int>(State.StartingIndex, State.MatchedChars);
+					else
+						matchResult = wordBoundaryResult;
+				}
+
+				return std::pair<int, int>(matchResult, matchResult);
+			}
 
 			// This happens when there are still matches in stack but current state ate all of `In`
 			State = matchingStates.top();
@@ -283,15 +293,15 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 			continue;
 		}
 		
-		if (MatchRepeating) {
+		if (Options.MatchRepeating) {
 			// Try to match repeating substring
 			GetMappings(State.LastMatched, State.In, mappingsStorage);
 			auto mappingsSize = mappingsStorage.Size();
 
 			if (mappingsSize != 0) {
 				*StatePushes += mappingsSize;
-				if (*StatePushes > StatePushLimit)
-					return std::pair<int, int>(-2, -2);
+				if (*StatePushes > Options.StatePushLimit)
+					return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
 
 				// Push every new matching path
 				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
@@ -326,27 +336,46 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 					));
 
 					(*StatePushes)++;
-					if (*StatePushes > StatePushLimit)
-						return std::pair<int, int>(-2, -2);
+					if (*StatePushes > Options.StatePushLimit)
+						return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
 				}
 			}
 		}
 
 		// Try to match next substring
-		GetMappings(State.Contains, State.In, mappingsStorage);
-		auto mappingsSize = mappingsStorage.Size();
+		size_t mappingsSize = 0;
+		if (State.Contains.size() != 0) {
+			GetMappings(State.Contains, State.In, mappingsStorage);
+			mappingsSize = mappingsStorage.Size();
+		}
 
 		if (mappingsSize != 0) {
 			*StatePushes += mappingsSize;
-			if (*StatePushes > StatePushLimit)
-				return std::pair<int, int>(-2, -2);
+			if (*StatePushes > Options.StatePushLimit)
+				return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
 
 			for (auto x = 0;x < mappingsStorage.CurSize;x++) {
 				auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
 
 				// If we were about to eat all of `Contains`, that means we found the whole thing
-				if (item.first.size() == State.Contains.size())
-					return std::pair<int, int>(State.StartingIndex, State.MatchedChars + item.second.size());
+				if (item.first.size() == State.Contains.size()) {
+
+					// But check for word boundary first
+					int wordBoundaryResult = 0;
+
+					if (Options.MatchOnWordBoundary) {
+						wordBoundaryResult = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars + item.second.size()));
+					}
+
+					if (wordBoundaryResult == 0)
+						return std::pair<int, int>(State.StartingIndex, State.MatchedChars + item.second.size());
+					else {
+						// We were about to eat the whole thing but it turned out to be not what we need, so this path is not pushed
+						mappingsSize = 0;
+						matchResult = wordBoundaryResult;
+						break;
+					}
+				}
 
 				// Push new path
 				matchingStates.push(MatchingState(
@@ -357,10 +386,25 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 					CMStringView(State.Contains.data(), item.first.size())
 				));
 			}
-		} else {
+		} 
+		if (mappingsSize == 0) {
 			// We didn't put any new paths into stack so check if we depleted all paths
-			if (matchingStates.empty())
-				return std::pair<int, int>(-1, -1);
+			if (matchingStates.empty()) {
+				if (State.Contains.size() == 0) {
+					int wordBoundaryResult = 0;
+
+					if (Options.MatchOnWordBoundary) {
+						wordBoundaryResult = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars));
+					}
+
+					if (wordBoundaryResult == 0)
+						return std::pair<int, int>(State.StartingIndex, State.MatchedChars);
+					else
+						matchResult = wordBoundaryResult;
+				}
+
+				return std::pair<int, int>(matchResult, matchResult);
+			}
 		}
 
 		// Fetch newest path --- this includes last new path from next substring matching
@@ -369,10 +413,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(MatchingState State, bool Ma
 	}
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
+std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options)
 {
 	StackVector<std::pair<CMStringView, CMStringView>> MappingsStorage;
-	int statePushes = 0;
+	size_t statePushes = 0;
+	int matchResult = NO_MATCH;
 
 	if (Contains.size() == 0)
 		return std::pair<int, int>(0, 0);
@@ -384,54 +429,69 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 	 *  In(0), Contains(0) returns (0, 0) due to check above (nothing does contain nothing)
 	 */
 
-	for (int x = StartIndex;StartFromEnd ? (x >= 0) : (x < In.size());x += StartFromEnd ? -1 : 1) {
+	for (int x = Options.StartIndex;Options.StartFromEnd ? (x >= 0) : (x < In.size());x += Options.StartFromEnd ? -1 : 1) {
 		// Find the beginning and construct state from it
 		GetMappings(Contains, CMStringView(In.data() + x), MappingsStorage);
 		if (MappingsStorage.Size() == 0)
 			continue;
 
 		statePushes += MappingsStorage.Size();
-		if (statePushes > StatePushLimit)
-			return std::pair<int, int>(-2, -2);
+		if (statePushes > Options.StatePushLimit)
+			return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
 
 		for (auto i = 0;i < MappingsStorage.CurSize;i++) {
 			auto item = MappingsStorage.IsStack ? MappingsStorage.Stack[i] : MappingsStorage.Heap[i];
 
-			// Already found the whole thing when searching for beginning
-			if (item.first.size() == Contains.size()) {
-				// But lets check if it repeats before returning
+			// Matched full string and no repeats
+			if (item.first.size() == Contains.size() && x + item.second.size() == In.size()) {
+				int wordBoundaryResult = 0;
 
-				auto retLength = item.second.size();
+				if (Options.MatchOnWordBoundary)
+					wordBoundaryResult = CheckWordBoundary(In, CMStringView(In.data() + x, item.second.size()));
 
-				if (MatchRepeating) {
-					retLength = GetRepeatingLength(CMStringView(In.data() + x), Contains, &statePushes, StatePushLimit);
+				if (wordBoundaryResult == 0)
+					return std::pair<int, int>(x, item.second.size());
+				else {
+					assert(wordBoundaryResult != WORD_BOUNDARY_FAIL_END);
+
+					matchResult = wordBoundaryResult;
+					continue;
 				}
-				return std::pair<int, int>(x, retLength);
 			}
 
-			auto contains = IndexOfInner(MatchingState(
-				CMStringView(In.data() + x + item.second.size()),
-				CMStringView(Contains.data() + item.first.size()),
-				x,
-				item.second.size(),
-				CMStringView(Contains.data(), item.first.size())
-			), MatchRepeating, &statePushes, StatePushLimit);
+			auto contains = IndexOfInner(
+				In,
+				MatchingState(
+					CMStringView(In.data() + x + item.second.size()),
+					CMStringView(Contains.data() + item.first.size()),
+					x,
+					item.second.size(),
+					CMStringView(Contains.data(), item.first.size())
+				),
+				&statePushes,
+				Options
+			);
 
-			if (contains.first == -1)
+			if (contains.first == NO_MATCH)
 				continue;
+			else if (contains.first == WORD_BOUNDARY_FAIL_START || contains.first == WORD_BOUNDARY_FAIL_END) {
+				// Prefer word boundary failure results as they probably make more sense for human
+				matchResult = contains.first;
+				continue;
+			}
 
 			return contains;
 		}
 	}
-	return std::pair<int, int>(-1, -1);
+	return std::pair<int, int>(matchResult, matchResult);
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, bool MatchRepeating, int StartIndex, bool StartFromEnd, int StatePushLimit)
+std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, CMOptions Options)
 {
-	if (StartIndex >= In.size() || StartIndex < 0)
-		return std::pair<int, int>(-1, -1);
+	if (Options.StartIndex >= In.size() || Options.StartIndex < 0)
+		return std::pair<int, int>(NO_MATCH, NO_MATCH);
 
-	return IndexOfFromView(CMStringView(In), CMStringView(Contains), MatchRepeating, StartIndex, StartFromEnd, StatePushLimit);
+	return IndexOfFromView(CMStringView(In), CMStringView(Contains), Options);
 }
 
 ConfusableMatcher::~ConfusableMatcher()
