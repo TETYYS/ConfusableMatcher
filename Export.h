@@ -41,17 +41,11 @@ extern "C" {
 		uint32_t Size;
 	} CMMap;
 
-	typedef struct _CMIntPair
-	{
-		int32_t First;
-		int32_t Second;
-	} CMIntPair;
-
 #include "Shared.h"
 
 	EXPORTED CMHandle __cdecl InitConfusableMatcher(CMMap Map, char** IgnoreList, int IgnoreCount, bool AddDefaultValues);
 	EXPORTED void __cdecl FreeConfusableMatcher(CMHandle In);
-	EXPORTED CMIntPair __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, CMOptions Options);
+	EXPORTED CMReturn __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, CMOptions Options);
 	EXPORTED uint32_t __cdecl GetKeyMappings(CMHandle CM, char* In, const char** Output, uint32_t OutputSize);
 #ifdef __cplusplus
 }

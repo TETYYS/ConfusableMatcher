@@ -159,11 +159,6 @@ const std::string WORD_BOUNDARIES[] = {
 	"'"
 };
 
-const int NO_MATCH = -1;
-const int EXCEEDED_STATE_PUSH_LIMIT = -2;
-const int WORD_BOUNDARY_FAIL_START = -3;
-const int WORD_BOUNDARY_FAIL_END = -4;
-
 class ConfusableMatcher
 {
 	private:
@@ -201,18 +196,18 @@ class ConfusableMatcher
 
 	void
 		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage);
-	std::pair<int, int>
+	CMReturn
 		IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
-	std::pair<int, int>
-		IndexOfInner(CMStringView FullIn, MatchingState State, size_t *StatePushes, CMOptions Options);
-	int
+	CMReturn
+		IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options);
+	static CM_RETURN_STATUS
 		CheckWordBoundary(CMStringView In, CMStringView Match);
 
 	public:
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);
 	bool
 		AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
-	std::pair<int, int>
+	CMReturn
 		IndexOf(std::string In, std::string Contains, CMOptions Options);
 	bool
 		AddSkip(std::string In);

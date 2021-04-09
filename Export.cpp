@@ -28,16 +28,12 @@ void FreeConfusableMatcher(CMHandle In)
 	delete (ConfusableMatcher*)In;
 }
 
-CMIntPair StringIndexOf(CMHandle CM, char *In, char *Contains, CMOptions Options)
+CMReturn StringIndexOf(CMHandle CM, char *In, char *Contains, CMOptions Options)
 {
-	auto rawRet = ((ConfusableMatcher*)CM)->IndexOf(
+	return ((ConfusableMatcher*)CM)->IndexOf(
 		In,
 		Contains,
 		Options);
-
-	return CMIntPair {
-		rawRet.first, rawRet.second
-	};
 }
 
 uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t OutputSize)

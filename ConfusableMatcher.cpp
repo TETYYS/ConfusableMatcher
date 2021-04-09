@@ -183,8 +183,6 @@ void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Ou
 
 		for (auto valueIterator = values->begin();valueIterator != values->end();valueIterator++) {
 			for (auto x = 0;x < valueIterator->second->size();x++) {
-				auto s = valueIterator->second;
-
 				Output.Push((*(valueIterator->second))[x]);
 			}
 		}
@@ -220,7 +218,7 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 	return;
 }
 
-int ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringView Match)
+CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringView Match)
 {
 	bool startPass = false, endPass = false;
 
@@ -258,33 +256,36 @@ int ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringView Match)
 		return WORD_BOUNDARY_FAIL_END;
 	}
 
-	return 0;
+	return MATCH;
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, MatchingState State, size_t *StatePushes, CMOptions Options)
+CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options)
 {
 	std::stack<MatchingState> matchingStates;
 	StackVector<std::pair<CMStringView, CMStringView>> mappingsStorage;
-	int matchResult = NO_MATCH;
+	CMReturn ret;
+	ret.Start = State.StartingIndex;
+	ret.Status = NO_MATCH;
+
+	auto handleEmptyMatchingStates = [&State, Options, &ret, FullIn]()
+	{
+		if (State.Contains.size() == 0) {
+			if (Options.MatchOnWordBoundary) {
+				ret.Status = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars));
+			} else
+				ret.Status = MATCH;
+
+			ret.Size = State.MatchedChars;
+		}
+
+		return ret;
+	};
 
 	while (true) {
 		if (State.In.size() == 0) {
 			// Current state ate all of `In` and we have no other state to get from stack
 			if (matchingStates.empty()) {
-				if (State.Contains.size() == 0) {
-					int wordBoundaryResult = 0;
-
-					if (Options.MatchOnWordBoundary) {
-						wordBoundaryResult = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars));
-					}
-
-					if (wordBoundaryResult == 0)
-						return std::pair<int, int>(State.StartingIndex, State.MatchedChars);
-					else
-						matchResult = wordBoundaryResult;
-				}
-
-				return std::pair<int, int>(matchResult, matchResult);
+				return handleEmptyMatchingStates();
 			}
 
 			// This happens when there are still matches in stack but current state ate all of `In`
@@ -300,8 +301,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, Matchin
 
 			if (mappingsSize != 0) {
 				*StatePushes += mappingsSize;
-				if (*StatePushes > Options.StatePushLimit)
-					return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
+				if (*StatePushes > Options.StatePushLimit) {
+					ret.Size = State.MatchedChars;
+					ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
+					return ret;
+				}
 
 				// Push every new matching path
 				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
@@ -336,8 +340,11 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, Matchin
 					));
 
 					(*StatePushes)++;
-					if (*StatePushes > Options.StatePushLimit)
-						return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
+					if (*StatePushes > Options.StatePushLimit) {
+						ret.Size = State.MatchedChars;
+						ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
+						return ret;
+					}
 				}
 			}
 		}
@@ -351,28 +358,30 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, Matchin
 
 		if (mappingsSize != 0) {
 			*StatePushes += mappingsSize;
-			if (*StatePushes > Options.StatePushLimit)
-				return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
+			if (*StatePushes > Options.StatePushLimit) {
+				ret.Size = State.MatchedChars;
+				ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
+				return ret;
+			}
 
 			for (auto x = 0;x < mappingsStorage.CurSize;x++) {
 				auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
 
 				// If we were about to eat all of `Contains`, that means we found the whole thing
 				if (item.first.size() == State.Contains.size()) {
-
 					// But check for word boundary first
-					int wordBoundaryResult = 0;
+					ret.Size = State.MatchedChars + item.second.size();
 
 					if (Options.MatchOnWordBoundary) {
-						wordBoundaryResult = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars + item.second.size()));
-					}
+						ret.Status = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, ret.Size));
+					} else
+						ret.Status = MATCH;
 
-					if (wordBoundaryResult == 0)
-						return std::pair<int, int>(State.StartingIndex, State.MatchedChars + item.second.size());
-					else {
+					if (ret.Status == MATCH) {
+						return ret;
+					} else {
 						// We were about to eat the whole thing but it turned out to be not what we need, so this path is not pushed
 						mappingsSize = 0;
-						matchResult = wordBoundaryResult;
 						break;
 					}
 				}
@@ -390,20 +399,7 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, Matchin
 		if (mappingsSize == 0) {
 			// We didn't put any new paths into stack so check if we depleted all paths
 			if (matchingStates.empty()) {
-				if (State.Contains.size() == 0) {
-					int wordBoundaryResult = 0;
-
-					if (Options.MatchOnWordBoundary) {
-						wordBoundaryResult = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars));
-					}
-
-					if (wordBoundaryResult == 0)
-						return std::pair<int, int>(State.StartingIndex, State.MatchedChars);
-					else
-						matchResult = wordBoundaryResult;
-				}
-
-				return std::pair<int, int>(matchResult, matchResult);
+				return handleEmptyMatchingStates();
 			}
 		}
 
@@ -413,20 +409,20 @@ std::pair<int, int> ConfusableMatcher::IndexOfInner(CMStringView FullIn, Matchin
 	}
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options)
+CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options)
 {
 	StackVector<std::pair<CMStringView, CMStringView>> MappingsStorage;
 	size_t statePushes = 0;
-	int matchResult = NO_MATCH;
-
-	if (Contains.size() == 0)
-		return std::pair<int, int>(0, 0);
+	CMReturn ret;
+	ret.Start = 0;
+	ret.Size = 0;
+	ret.Status = NO_MATCH;
 
 	/*
 	 * No need to check for `In` size, loop never executes due it's size and returns a proper result:
-	 *  In(1), Contains(0) returns (0, 0) due to check above
-	 *  In(0), Contains(1) returns (-1, -1) due to return at the end of the method
-	 *  In(0), Contains(0) returns (0, 0) due to check above (nothing does contain nothing)
+	 *  In(1), Contains(0) returns a match due to check in IndexOf
+	 *  In(0), Contains(1) returns no match due to return at the end of the method
+	 *  In(0), Contains(0) returns a match due to check in IndexOf (nothing does contain nothing)
 	 */
 
 	for (int x = Options.StartIndex;Options.StartFromEnd ? (x >= 0) : (x < In.size());x += Options.StartFromEnd ? -1 : 1) {
@@ -436,30 +432,35 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 			continue;
 
 		statePushes += MappingsStorage.Size();
-		if (statePushes > Options.StatePushLimit)
-			return std::pair<int, int>(EXCEEDED_STATE_PUSH_LIMIT, EXCEEDED_STATE_PUSH_LIMIT);
+		if (statePushes > Options.StatePushLimit) {
+			ret.Start = x;
+			ret.Size = 1;
+			ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
+			return ret;
+		}
 
 		for (auto i = 0;i < MappingsStorage.CurSize;i++) {
 			auto item = MappingsStorage.IsStack ? MappingsStorage.Stack[i] : MappingsStorage.Heap[i];
 
 			// Matched full string and no repeats
 			if (item.first.size() == Contains.size() && x + item.second.size() == In.size()) {
-				int wordBoundaryResult = 0;
-
 				if (Options.MatchOnWordBoundary)
-					wordBoundaryResult = CheckWordBoundary(In, CMStringView(In.data() + x, item.second.size()));
+					ret.Status = CheckWordBoundary(In, CMStringView(In.data() + x, item.second.size()));
+				else
+					ret.Status = MATCH;
 
-				if (wordBoundaryResult == 0)
-					return std::pair<int, int>(x, item.second.size());
-				else {
-					assert(wordBoundaryResult != WORD_BOUNDARY_FAIL_END);
+				ret.Start = x;
+				ret.Size = item.second.size();
 
-					matchResult = wordBoundaryResult;
+				if (ret.Status == MATCH) {
+					return ret;
+				} else {
+					assert(ret.Status != WORD_BOUNDARY_FAIL_END);
 					continue;
 				}
 			}
 
-			auto contains = IndexOfInner(
+			auto result = IndexOfInner(
 				In,
 				MatchingState(
 					CMStringView(In.data() + x + item.second.size()),
@@ -472,24 +473,42 @@ std::pair<int, int> ConfusableMatcher::IndexOfFromView(CMStringView In, CMString
 				Options
 			);
 
-			if (contains.first == NO_MATCH)
+			if (result.Status == NO_MATCH)
 				continue;
-			else if (contains.first == WORD_BOUNDARY_FAIL_START || contains.first == WORD_BOUNDARY_FAIL_END) {
+			else if (result.Status == WORD_BOUNDARY_FAIL_START || result.Status == WORD_BOUNDARY_FAIL_END) {
 				// Prefer word boundary failure results as they probably make more sense for human
-				matchResult = contains.first;
+				ret.Start = result.Start;
+				ret.Size = result.Size;
+				ret.Status = result.Status;
 				continue;
+			} else {
+				// Final result - match or state push limit expired
+				return result;
 			}
-
-			return contains;
 		}
 	}
-	return std::pair<int, int>(matchResult, matchResult);
+
+	return ret;
 }
 
-std::pair<int, int> ConfusableMatcher::IndexOf(std::string In, std::string Contains, CMOptions Options)
+CMReturn ConfusableMatcher::IndexOf(std::string In, std::string Contains, CMOptions Options)
 {
-	if (Options.StartIndex >= In.size() || Options.StartIndex < 0)
-		return std::pair<int, int>(NO_MATCH, NO_MATCH);
+	if (Contains.size() == 0) {
+		CMReturn ret;
+
+		ret.Status = MATCH;
+		ret.Start = 0;
+		ret.Size = 0;
+		return ret;
+	}
+
+	if (Options.StartIndex >= In.size() || Options.StartIndex < 0) {
+		CMReturn ret;
+		ret.Status = NO_MATCH;
+		ret.Start = 0;
+		ret.Size = 0;
+		return ret;
+	}
 
 	return IndexOfFromView(CMStringView(In), CMStringView(Contains), Options);
 }

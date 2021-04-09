@@ -5,6 +5,34 @@
 #include <cute/ide_listener.h>
 #include <thread>
 
+void AssertMatch(CMReturn In, size_t Start, size_t Size)
+{
+	ASSERT_EQUAL(MATCH, In.Status);
+	ASSERT_EQUAL(Start, In.Start);
+	ASSERT_EQUAL(Size, In.Size);
+}
+
+void AssertMatchMulti(CMReturn In, std::vector<size_t> Start, std::vector<size_t> Size, CM_RETURN_STATUS Status = MATCH)
+{
+	ASSERT_EQUAL(Status, In.Status);
+	ASSERT_EQUAL(Start.size(), Size.size());
+
+	bool ok = false;
+	for (auto x = 0;x < Start.size();x++) {
+		if (Start[x] == In.Start && Size[x] == In.Size) {
+			ok = true;
+			break;
+		}
+	}
+
+	ASSERT(ok);
+}
+
+void AssertNoMatch(CMReturn In)
+{
+	ASSERT_EQUAL(NO_MATCH, In.Status);
+}
+
 void Test1()
 {
 	std::vector<std::pair<std::string, std::string>> map;
@@ -18,8 +46,7 @@ void Test1()
 	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("TEST", "NICE", opts);
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(4, res.second);
+	AssertMatch(res, 0, 4);
 }
 
 void Test2()
@@ -33,23 +60,18 @@ void Test2()
 	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("VV", "VAVOVAVO", opts);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
+	AssertNoMatch(res);
 	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
-	ASSERT(res.first == 0 || res.first == 4);
-	ASSERT(res.second == 3 || res.second == 4);
+	AssertMatchMulti(res, { 0, 4 }, { 3, 4 });
 	opts.StartIndex = 4;
 	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
-	ASSERT_EQUAL(res.first, 4);
-	ASSERT(res.second == 3 || res.second == 4);
+	AssertMatchMulti(res, { 4, 4 }, { 3, 4 });
 	opts.StartIndex = 2;
 	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
-	ASSERT(res.first == 2 || res.first == 4);
-	ASSERT(res.second == 3 || res.second == 4);
+	AssertMatchMulti(res, { 2, 4 }, { 3, 4 });
 	opts.StartIndex = 3;
 	res = matcher.IndexOf("VAVOVAVO", "VV", opts);
-	ASSERT_EQUAL(res.first, 4);
-	ASSERT(res.second == 3 || res.second == 4);
+	AssertMatchMulti(res, { 4, 4 }, { 3, 4 });
 }
 
 void Test3()
@@ -63,8 +85,7 @@ void Test3()
 	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("\U00000002\U00000003\U000000FA\U000000FF", "AB", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 6);
+	AssertMatch(res, 0, 6);
 }
 
 void Test4()
@@ -79,8 +100,7 @@ void Test4()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { "_", " " });
 	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 11);
+	AssertMatch(res, 0, 11);
 }
 
 void Test5()
@@ -95,8 +115,7 @@ void Test5()
 	opts.StatePushLimit = 50000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("/\\/CE", "NICE", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 5);
+	AssertMatch(res, 0, 5);
 }
 
 void Test6()
@@ -112,14 +131,11 @@ void Test6()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("I/\\/AM", "INAN", opts);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
+	AssertNoMatch(res);
 	res = matcher.IndexOf("I/\\/AM", "INAM", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 6);
+	AssertMatch(res, 0, 6);
 	res = matcher.IndexOf("I/\\/AM", "IIVAM", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 6);
+	AssertMatch(res, 0, 6);
 }
 
 std::vector<std::pair<std::string, std::string>> GetDefaultMap()
@@ -168,9 +184,7 @@ void Test7()
 	auto matcher = ConfusableMatcher(map, { "_", "%", "$" });
 	auto res = matcher.IndexOf(in, "NIGGER", opts);
 
-	ASSERT(
-		(res.first == 64 && res.second == 57) ||
-		(res.first == 89 && res.second == 32));
+	AssertMatchMulti(res, { 64, 89 }, { 57, 32 });
 }
 
 void LidlNormalizerTests()
@@ -230,8 +244,7 @@ void LidlNormalizerTests()
 		std::vector<int> eq;
 		std::tie(chr, eq) = entry;
 		auto res = matcher.IndexOf(chr[0], chr[1], opts);
-		ASSERT_EQUAL(res.first, eq[0]);
-		ASSERT_EQUAL(res.second, eq[1]);
+		AssertMatch(res, eq[0], eq[1]);
 	}
 }
 
@@ -246,8 +259,7 @@ void Test8()
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890",
 		opts);
-	ASSERT_EQUAL(res.first, 5);
-	ASSERT_EQUAL(res.second, 397);
+	AssertMatch(res, 5, 397);
 }
 
 void Test9()
@@ -282,8 +294,7 @@ void Test9()
 		"ABCDEFGHIJKLMNOPQRS",
 		"B",
 		opts);
-	ASSERT(res.first == 0 || res.first == 1);
-	ASSERT_EQUAL(res.second, 1);
+	AssertMatchMulti(res, { 0, 1 }, { 1, 1 });
 
 	map.clear();
 	map.push_back(std::pair<std::string, std::string>("B", "A"));
@@ -332,8 +343,7 @@ void Test9()
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
 		"BB",
 		opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 2);
+	AssertMatch(res, 0, 2);
 
 	opts.MatchRepeating = true;
 	opts.StatePushLimit = 2000;
@@ -341,8 +351,8 @@ void Test9()
 		"PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789",
 		"BBBBBBBBBBBBBBBBBBBBBBBBBBB",
 		opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT(res.second >= 547 && res.second <= 567);
+	ASSERT_EQUAL(res.Start, 0);
+	ASSERT(res.Size >= 547 && res.Size <= 567);
 }
 
 void Test10()
@@ -354,12 +364,10 @@ void Test10()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf(":)", "", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 0);
+	AssertMatch(res, 0, 0);
 
 	res = matcher.IndexOf("", ":)", opts);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
+	AssertNoMatch(res);
 }
 
 void Test11()
@@ -377,8 +385,7 @@ void Test11()
 	opts.MatchRepeating = true;
 	opts.StatePushLimit = 1000;
 	auto res = matcher.IndexOf("ABAAA", "ABAR", opts);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
+	AssertNoMatch(res);
 }
 
 void Test12()
@@ -390,13 +397,11 @@ void Test12()
 	auto matcher = ConfusableMatcher(map, { });
 
 	auto res = matcher.IndexOf("A", "A", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 1);
+	AssertMatch(res, 0, 1);
 
 	auto matcher2 = ConfusableMatcher(map, { }, false);
 	res = matcher2.IndexOf("A", "A", opts);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
+	AssertNoMatch(res);
 }
 
 void Test13()
@@ -474,8 +479,7 @@ void Test15()
 	opts.StatePushLimit = 50000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("FOLLOWONBOT.COM", "FOLLOWONBOT.COM", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 15);
+	AssertMatch(res, 0, 15);
 }
 
 void Test16()
@@ -490,8 +494,7 @@ void Test16()
 	opts.StatePushLimit = 50000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/", "NNNNNNNNNNNNNNNA", opts);
-	ASSERT_EQUAL(res.first, -2);
-	ASSERT_EQUAL(res.second, -2);
+	ASSERT_EQUAL(STATE_PUSH_LIMIT_EXCEEDED, res.Status);
 }
 
 void Test17()
@@ -506,8 +509,7 @@ void Test17()
 	opts.MatchRepeating = true;
 	opts.StatePushLimit = 100000;
 	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", opts);
-	ASSERT_EQUAL(res.first, -1);
-	ASSERT_EQUAL(res.second, -1);
+	AssertNoMatch(res);
 }
 
 void Test18()
@@ -524,8 +526,7 @@ void Test18()
 	opts.StatePushLimit = 50000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("N12345M", "NAM", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 7);
+	AssertMatch(res, 0, 7);
 }
 
 void Test19()
@@ -541,8 +542,7 @@ void Test19()
 	opts.StatePushLimit = 50000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("111111", "ABC", opts);
-	ASSERT_EQUAL(res.first, 0);
-	ASSERT_EQUAL(res.second, 3);
+	AssertMatch(res, 0, 3);
 }
 
 void Test20()
@@ -615,16 +615,12 @@ void Test23()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf(in, "AA", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(2, res.second);
+	AssertMatch(res, 0, 2);
 
 	opts.StartIndex = in.size() - 1;
 	opts.StartFromEnd = true;
 	res = matcher.IndexOf(in, "AA", opts);
-
-	ASSERT_EQUAL(15, res.first);
-	ASSERT_EQUAL(2, res.second);
+	AssertMatch(res, 15, 2);
 }
 
 void Test24()
@@ -640,9 +636,7 @@ void Test24()
 	opts.StartFromEnd = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf(in, "D", opts);
-
-	ASSERT_EQUAL(3, res.first);
-	ASSERT_EQUAL(1, res.second);
+	AssertMatch(res, 3, 1);
 }
 
 void Test25()
@@ -657,16 +651,12 @@ void Test25()
 	opts.StatePushLimit = 20;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf(in, "ASB", opts);
-
-	ASSERT_EQUAL(-2, res.first);
-	ASSERT_EQUAL(-2, res.second);
+	ASSERT_EQUAL(STATE_PUSH_LIMIT_EXCEEDED, res.Status);
 
 	opts.StartFromEnd = true;
 	opts.StartIndex = in.size() - 1;
 	res = matcher.IndexOf(in, "ASB", opts);
-
-	ASSERT_EQUAL(92, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 92, 3);
 }
 
 void Test26()
@@ -678,9 +668,7 @@ void Test26()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("AAA", "A", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 0, 3);
 }
 
 void Test27()
@@ -692,9 +680,7 @@ void Test27()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("BB AAA", "A", opts);
-
-	ASSERT_EQUAL(3, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 3, 3);
 }
 
 void Test28()
@@ -706,9 +692,7 @@ void Test28()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N|\\|NC", "N", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(5, res.second);
+	AssertMatch(res, 0, 5);
 }
 
 void Test29()
@@ -723,9 +707,7 @@ void Test29()
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N/\\///AN", "N", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(8, res.second);
+	AssertMatch(res, 0, 8);
 }
 
 void Test30()
@@ -739,8 +721,8 @@ void Test30()
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N////////////////////////////////////////////////", "N", opts);
 
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_GREATER(res.second, 10);
+	ASSERT_EQUAL(0, res.Start);
+	ASSERT_GREATER(res.Size, 10);
 }
 
 void Test31()
@@ -753,39 +735,29 @@ void Test31()
 
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("X", "X", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(1, res.second);
+	AssertMatch(res, 0, 1);
 
 	res = matcher.IndexOf("aX", "X", opts);
-
-	ASSERT_EQUAL(-3, res.first);
-	ASSERT_EQUAL(-3, res.second);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+	ASSERT_EQUAL(1, res.Start);
+	ASSERT_EQUAL(1, res.Size);
 
 	res = matcher.IndexOf("Xa", "X", opts);
-
-	ASSERT_EQUAL(-4, res.first);
-	ASSERT_EQUAL(-4, res.second);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+	ASSERT_EQUAL(0, res.Start);
+	ASSERT_EQUAL(1, res.Size);
 
 	res = matcher.IndexOf("a X", "X", opts);
-
-	ASSERT_EQUAL(2, res.first);
-	ASSERT_EQUAL(1, res.second);
+	AssertMatch(res, 2, 1);
 
 	res = matcher.IndexOf("X a", "X", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(1, res.second);
+	AssertMatch(res, 0, 1);
 
 	res = matcher.IndexOf("X;duper", "X", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(1, res.second);
+	AssertMatch(res, 0, 1);
 
 	res = matcher.IndexOf("yes\uFEFFX", "X", opts);
-
-	ASSERT_EQUAL(6, res.first);
-	ASSERT_EQUAL(1, res.second);
+	AssertMatch(res, 6, 1);
 }
 
 void Test32()
@@ -799,39 +771,28 @@ void Test32()
 
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("QQQ", "Q", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 0, 3);
 
 	res = matcher.IndexOf("aQQQ", "Q", opts);
-
-	ASSERT_EQUAL(-3, res.first);
-	ASSERT_EQUAL(-3, res.second);
+	ASSERT(res.Status == WORD_BOUNDARY_FAIL_START || res.Status == WORD_BOUNDARY_FAIL_END);
+	AssertMatchMulti(res, { 1, 1, 1, 2, 2, 3 }, { 1, 2, 3, 1, 2, 1 }, res.Status);
 
 	res = matcher.IndexOf("QQQa", "Q", opts);
 
-	ASSERT(res.first == -4 || res.first == -3);
-	ASSERT(res.second == -4 || res.second == -3);
+	ASSERT(res.Status == WORD_BOUNDARY_FAIL_START || res.Status == WORD_BOUNDARY_FAIL_END);
+	AssertMatchMulti(res, { 0, 0, 0, 1, 1, 2 }, { 1, 2, 3, 1, 2, 1 }, res.Status);
 
 	res = matcher.IndexOf("a QQQ", "Q", opts);
-
-	ASSERT_EQUAL(2, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 2, 3);
 
 	res = matcher.IndexOf("QQQ a", "Q", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 0, 3);
 
 	res = matcher.IndexOf("QQQ;duper", "Q", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 0, 3);
 
 	res = matcher.IndexOf("yes\u202FQQQ", "Q", opts);
-
-	ASSERT_EQUAL(6, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 6, 3);
 }
 
 void Test33()
@@ -849,9 +810,7 @@ void Test33()
 
 	auto matcher = ConfusableMatcher(map, { "B" });
 	auto res = matcher.IndexOf(in, "Q", opts);
-
-	ASSERT_EQUAL(2, res.first);
-	ASSERT_EQUAL(4, res.second);
+	AssertMatch(res, 2, 4);
 }
 
 void Test34()
@@ -864,39 +823,29 @@ void Test34()
 
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("SUPER", "SUPER", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(5, res.second);
+	AssertMatch(res, 0, 5);
 
 	res = matcher.IndexOf("aSUPER", "SUPER", opts);
-
-	ASSERT_EQUAL(-3, res.first);
-	ASSERT_EQUAL(-3, res.second);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+	ASSERT_EQUAL(1, res.Start);
+	ASSERT_EQUAL(5, res.Size);
 
 	res = matcher.IndexOf("SUPERa", "SUPER", opts);
-
-	ASSERT_EQUAL(-4, res.first);
-	ASSERT_EQUAL(-4, res.second);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+	ASSERT_EQUAL(0, res.Start);
+	ASSERT_EQUAL(5, res.Size);
 
 	res = matcher.IndexOf("a SUPER", "SUPER", opts);
-
-	ASSERT_EQUAL(2, res.first);
-	ASSERT_EQUAL(5, res.second);
+	AssertMatch(res, 2, 5);
 
 	res = matcher.IndexOf("SUPER a", "SUPER", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(5, res.second);
+	AssertMatch(res, 0, 5);
 
 	res = matcher.IndexOf("SUPER;duper", "SUPER", opts);
-
-	ASSERT_EQUAL(0, res.first);
-	ASSERT_EQUAL(5, res.second);
+	AssertMatch(res, 0, 5);
 
 	res = matcher.IndexOf("yes\u202FSUPER", "SUPER", opts);
-
-	ASSERT_EQUAL(6, res.first);
-	ASSERT_EQUAL(5, res.second);
+	AssertMatch(res, 6, 5);
 }
 
 void Test35()
@@ -910,19 +859,17 @@ void Test35()
 
 	auto matcher = ConfusableMatcher(map, { " " });
 	auto res = matcher.IndexOf("a Q Q f", "Q Q", opts);
-
-	ASSERT_EQUAL(2, res.first);
-	ASSERT_EQUAL(3, res.second);
+	AssertMatch(res, 2, 3);
 
 	res = matcher.IndexOf("aQ Q f", "Q Q", opts);
-
-	ASSERT_EQUAL(-3, res.first);
-	ASSERT_EQUAL(-3, res.second);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+	ASSERT_EQUAL(1, res.Start);
+	ASSERT_EQUAL(3, res.Size);
 
 	res = matcher.IndexOf("a Q Qf", "Q Q", opts);
-
-	ASSERT_EQUAL(-4, res.first);
-	ASSERT_EQUAL(-4, res.second);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+	ASSERT_EQUAL(2, res.Start);
+	ASSERT_EQUAL(3, res.Size);
 }
 
 void Test36()
@@ -936,8 +883,7 @@ void Test36()
 
 	auto matcher = ConfusableMatcher(map, { " " });
 	auto res = matcher.IndexOf("a Q Q Q f", "Q Q", opts);
-
-	ASSERT((res.first == 2 && res.second == 3) || (res.first == 4 && res.second == 3));
+	AssertMatchMulti(res, { 2, 4 }, { 3, 3 });
 }
 
 void Test37()
@@ -957,9 +903,25 @@ void Test37()
 
 	auto matcher = ConfusableMatcher(map, { " " });
 	auto res = matcher.IndexOf("as simp", "simp", opts);
+	AssertMatch(res, 3, 4);
+}
 
-	ASSERT_EQUAL(3, res.first);
-	ASSERT_EQUAL(4, res.second);
+void Test38()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("a", "", opts);
+	AssertMatch(res, 0, 0);
+
+	res = matcher.IndexOf("", "", opts);
+	AssertMatch(res, 0, 0);
+
+	res = matcher.IndexOf("", "a", opts);
+	AssertNoMatch(res);
 }
 
 int main()
@@ -1003,6 +965,7 @@ int main()
 	s.push_back(CUTE(Test35));
 	s.push_back(CUTE(Test36));
 	s.push_back(CUTE(Test37));
+	s.push_back(CUTE(Test38));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }
