@@ -924,6 +924,104 @@ void Test38()
 	AssertNoMatch(res);
 }
 
+void Test39()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, { "f" });
+	auto res = matcher.IndexOf("AABC", "ABC", opts);
+	AssertMatch(res, 0, 4);
+
+	res = matcher.IndexOf("AfABC", "ABC", opts);
+	AssertMatch(res, 0, 5);
+
+	res = matcher.IndexOf("ABCC", "ABC", opts);
+	AssertMatch(res, 0, 4);
+
+	res = matcher.IndexOf("ABCfC", "ABC", opts);
+	AssertMatch(res, 0, 5);
+}
+
+void Test40()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+	opts.StartFromEnd = true;
+
+	auto matcher = ConfusableMatcher(map, { "f" });
+	opts.StartIndex = 3;
+	auto res = matcher.IndexOf("AABC", "ABC", opts);
+	AssertMatch(res, 0, 4);
+
+	opts.StartIndex = 4;
+	res = matcher.IndexOf("AfABC", "ABC", opts);
+	AssertMatch(res, 0, 5);
+
+	opts.StartIndex = 3;
+	res = matcher.IndexOf("ABCC", "ABC", opts);
+	AssertMatch(res, 0, 4);
+
+	opts.StartIndex = 4;
+	res = matcher.IndexOf("ABCfC", "ABC", opts);
+	AssertMatch(res, 0, 5);
+}
+
+void Test41()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("i", "1"));
+	map.push_back(std::pair<std::string, std::string>("s", "s"));
+	map.push_back(std::pair<std::string, std::string>("m", "m"));
+	map.push_back(std::pair<std::string, std::string>("p", "p"));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, { " " });
+	auto res = matcher.IndexOf("agdhsjs s 1 mmm ppps dhsjdhsd", "simps", opts);
+	AssertMatch(res, 8, 12);
+}
+
+void Test42()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, { "░" });
+	auto res = matcher.IndexOf("░S░I░M░P░", "SIMP", opts);
+	AssertMatch(res, 0, 19);
+}
+
+void Test43()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("S", "░"));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, { "░" });
+	auto res = matcher.IndexOf("░S░I░M░P░", "SIMP", opts);
+	AssertMatch(res, 0, 19);
+}
+
 int main()
 {
 	cute::suite s;
@@ -966,6 +1064,11 @@ int main()
 	s.push_back(CUTE(Test36));
 	s.push_back(CUTE(Test37));
 	s.push_back(CUTE(Test38));
+	s.push_back(CUTE(Test39));
+	s.push_back(CUTE(Test40));
+	s.push_back(CUTE(Test41));
+	s.push_back(CUTE(Test42));
+	s.push_back(CUTE(Test43));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }
