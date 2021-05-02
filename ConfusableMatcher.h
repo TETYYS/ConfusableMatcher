@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <vector>
 #include <cstring>
+#include <bitset>
 
 #include "Config.h"
 #include "Shared.h"
@@ -130,35 +131,6 @@ public:
 	}
 };
 
-const std::string WORD_BOUNDARIES[] = {
-	"\U00000020",
-	"\U000000A0", // NO-BREAK SPACE
-	"\U00001680", // OGHAM SPACE MARK
-	"\U0000180E", // MONGOLIAN VOWEL SEPARATOR
-	"\U00002000", // EN QUAD
-	"\U00002001", // EM QUAD
-	"\U00002002", // EN SPACE (nut)
-	"\U00002003", // EM SPACE (mutton)
-	"\U00002004", // THREE-PER-EM SPACE (thick space)
-	"\U00002005", // FOUR-PER-EM SPACE (mid space)
-	"\U00002006", // SIX-PER-EM SPACE
-	"\U00002007", // FIGURE SPACE
-	"\U00002008", // PUNCTUATION SPACE
-	"\U00002009", // THIN SPACE
-	"\U0000200A", // HAIR SPACE
-	"\U0000200B", // ZERO WIDTH SPACE
-	"\U0000202F", // NARROW NO-BREAK SPACE
-	"\U0000205F", // MEDIUM MATHEMATICAL SPACE
-	"\U00003000", // IDEOGRAPHIC SPACE
-	"\U0000FEFF", // ZERO WIDTH NO-BREAK SPACE
-	",",
-	".",
-	":",
-	";",
-	"\"",
-	"'"
-};
-
 class ConfusableMatcher
 {
 	private:
@@ -193,26 +165,28 @@ class ConfusableMatcher
 		google::libc_allocator_with_realloc<std::pair<const char, std::vector<CMString>*>>
 	>
 		*SkipSet;
+	
+	static std::bitset<1114110> WordBoundaries;
+	static bool Initialized;
 
-	void
-		GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage);
-	CMReturn
-		IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
-	CMReturn
-		IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options);
-	static CM_RETURN_STATUS
-		CheckWordBoundary(CMStringView In, CMStringView Match);
+	void Init();
+	void GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage);
+	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
+	CMReturn IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options);
+	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
+	int MatchWordBoundary(unsigned char i0);
+	int MatchWordBoundary(unsigned char i0, unsigned char i1);
+	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2);
+	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3);
 
 	public:
+	size_t MatchWordBoundaryToRight(CMStringView In);
+	bool MatchWordBoundaryToLeft(CMStringView In);
+	bool AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
+	bool AddSkip(std::string In);
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);
-	bool
-		AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
-	CMReturn
-		IndexOf(std::string In, std::string Contains, CMOptions Options);
-	bool
-		AddSkip(std::string In);
-	void
-		GetKeyMappings(std::string In, StackVector<CMString> &Output);
+	CMReturn IndexOf(std::string In, std::string Contains, CMOptions Options);
+	void GetKeyMappings(std::string In, StackVector<CMString> &Output);
 
 	~ConfusableMatcher();
 };

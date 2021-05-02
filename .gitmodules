@@ -4,3 +4,6 @@
 [submodule "CUTE"]
 	path = UnitTests/CUTE
 	url = https://github.com/PeterSommerlad/CUTE
+[submodule "UnitTests/hayai"]
+	path = UnitTests/hayai
+	url = https://github.com/nickbruun/hayai.git

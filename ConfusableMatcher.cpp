@@ -7,6 +7,9 @@
 using google::dense_hash_map;
 #include "ConfusableMatcher.h"
 
+std::bitset<1114110> ConfusableMatcher::WordBoundaries;
+bool ConfusableMatcher::Initialized;
+
 bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate)
 {
 	if (Key.size() == 0)
@@ -120,6 +123,12 @@ bool ConfusableMatcher::AddSkip(std::string In)
 
 ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues)
 {
+	if (!ConfusableMatcher::Initialized)
+	{
+		ConfusableMatcher::Init();
+		ConfusableMatcher::Initialized = true;
+	}
+
 	TheMap = new google::dense_hash_map<
 		char, // Key first char
 		std::vector<
@@ -216,6 +225,98 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 	return;
 }
 
+int ConfusableMatcher::MatchWordBoundary(unsigned char i0)
+{
+	return ConfusableMatcher::WordBoundaries[i0];
+}
+
+int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1)
+{
+	auto c = ((i0 & 0x1F) << 6) | (i1 & 0x3F);
+
+	if ((i1 & 0xC0) == 0x80)
+		return ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
+	return -1;
+}
+
+int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2)
+{
+	auto c = ((i0 & 0x0F) << 12) | ((i1 & 0x3F) << 6) | (i2 & 0x3F);
+
+	if ((i1 & 0xC0) == 0x80 && ((i2 & 0xC0) == 0x80))
+		return ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
+	return -1;
+}
+
+int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3)
+{
+	auto c = ((i0 & 0x07) << 18) | ((i1 & 0x3F) << 12) | ((i2 & 0x3F) << 6) | (i3 & 0x3F);
+	if ((i1 & 0xC0) == 0x80 && ((i2 & 0xC0) == 0x80))
+		return c < ConfusableMatcher::WordBoundaries.size() && ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
+	return -1;
+}
+
+bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
+{
+	assert(In.size() < 5);
+	
+	if (In.size() == 0)
+		return false;
+
+#define process(i) if (i == 1) return true; else if (i == 0) return false;
+
+	if (In.size() == 4) {
+		process(MatchWordBoundary(In[0], In[1], In[2], In[3]));
+		process(MatchWordBoundary(In[0], In[1], In[2]));
+		process(MatchWordBoundary(In[0], In[1]));
+	} else if (In.size() == 3) {
+		process(MatchWordBoundary(In[0], In[1], In[2]));
+		process(MatchWordBoundary(In[0], In[1]));
+	} else if (In.size() == 2)
+		process(MatchWordBoundary(In[0], In[1]));
+
+	if (MatchWordBoundary(In[0]))
+		return true;
+
+	return false;
+
+#undef process
+}
+
+size_t ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
+{
+	assert(In.size() < 5);
+	
+	if (In.size() == 0)
+		return false;
+
+#define process(i, x) if (i == 1) return x; else if (i == 0) return MatchWordBoundaryToRight(CMStringView(In.data() + x, In.size() - x));
+
+	if (In.size() == 4) {
+		process(MatchWordBoundary(In[0], In[1], In[2], In[3]), 4);
+		process(MatchWordBoundary(In[1], In[2], In[3]), 3);
+		process(MatchWordBoundary(In[2], In[3]), 2);
+		if (MatchWordBoundary(In[3]))
+			return 1;
+	} else if (In.size() == 3) {
+		process(MatchWordBoundary(In[0], In[1], In[2]), 3);
+		process(MatchWordBoundary(In[1], In[2]), 2);
+		if (MatchWordBoundary(In[2]))
+			return 1;
+	} else if (In.size() == 2) {
+		process(MatchWordBoundary(In[0], In[1]), 2);
+		if (MatchWordBoundary(In[1]))
+			return 1;
+	} else {
+		if (MatchWordBoundary(In[0]))
+			return 1;
+	}
+
+	return 0;
+
+#undef process
+}
+
 CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringView Match)
 {
 	bool startPass = false, endPass = false;
@@ -223,14 +324,8 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	if (In.data() == Match.data()) {
 		startPass = true;
 	} else {
-		for (auto a = 0;a < std::extent<decltype(WORD_BOUNDARIES)>::value;a++) {
-			auto wb = WORD_BOUNDARIES[a];
-
-			if (Match.data() - wb.size() >= In.data() && CMStringView(Match.data() - wb.size(), wb.size()) == wb) {
-				startPass = true;
-				break;
-			}
-		}
+		auto distToStart = std::min((long long)4, Match.data() - In.data());
+		startPass = ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(Match.data() - distToStart, distToStart));
 	}
 
 	if (!startPass) {
@@ -240,14 +335,9 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	if (In.data() + In.size() == Match.data() + Match.size()) {
 		endPass = true;
 	} else {
-		for (auto a = 0;a < std::extent<decltype(WORD_BOUNDARIES)>::value;a++) {
-			auto wb = WORD_BOUNDARIES[a];
-
-			if (Match.data() + Match.size() + wb.size() <= In.data() + In.size() && CMStringView(Match.data() + Match.size(), wb.size()) == WORD_BOUNDARIES[a]) {
-				endPass = true;
-				break;
-			}
-		}
+		auto matchEnd = (Match.data() + Match.size());
+		auto distToEnd = std::min((long long)4, In.data() + In.size() - matchEnd);
+		endPass = ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView(Match.data() + Match.size(), distToEnd));
 	}
 
 	if (!endPass) {
@@ -265,7 +355,7 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingStat
 	ret.Start = State.StartingIndex;
 	ret.Status = NO_MATCH;
 
-	auto handleEmptyMatchingStates = [&State, Options, &ret, FullIn]()
+	auto handleEmptyMatchingStates = [this, &State, Options, &ret, FullIn]()
 	{
 		if (State.Contains.size() == 0) {
 			if (Options.MatchOnWordBoundary) {
@@ -429,24 +519,6 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 	for (int x = Options.StartIndex;Options.StartFromEnd ? (x >= 0) : (x < In.size());x += Options.StartFromEnd ? -1 : 1) {
 		// Find the beginning and construct state from it
 
-		size_t mappingsIndex = 0;
-
-		if (Options.MatchOnWordBoundary) {
-			// Special case for word boundary matching - we need to begin with skips instead
-			auto foundSkip = SkipSet->find(In[x]);
-			if (foundSkip != SkipSet->end()) {
-				for (auto it = foundSkip->second->begin();it != foundSkip->second->end();it++) {
-					auto thisSz = it->Len;
-
-					if (thisSz <= x + In.size() && CMStringView(In.data() + x, thisSz) == (*it).View()) {
-						MappingsStorage.Push(std::pair<CMStringView, CMStringView>(CMStringView(""), CMStringView(In.data() + x, thisSz)));
-					}
-				}
-			}
-
-			mappingsIndex = MappingsStorage.Size();
-		}
-
 		GetMappings(Contains, CMStringView(In.data() + x), MappingsStorage);
 		if (MappingsStorage.Size() == 0)
 			continue;
@@ -487,7 +559,7 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 					CMStringView(Contains.data() + item.first.size()),
 					x,
 					item.second.size(),
-					i < mappingsIndex ? item.second : CMStringView(Contains.data(), item.first.size())
+					CMStringView(Contains.data(), item.first.size())
 				),
 				&statePushes,
 				Options
@@ -495,12 +567,88 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 
 			if (result.Status == NO_MATCH)
 				continue;
-			else if (result.Status == WORD_BOUNDARY_FAIL_START || result.Status == WORD_BOUNDARY_FAIL_END) {
+			else if (result.Status == WORD_BOUNDARY_FAIL_START) {
+				// Special case for word boundary matching - we need to check for skips in the beginning
+				int skipBlockStart = -1, skipBlockLen = 0;
+				for (int y = 0;y < result.Start;y++) {
+					bool modifiedSkipBlockLen = false;
+
+					auto foundSkip = SkipSet->find(In[y]);
+					if (foundSkip != SkipSet->end()) {
+						for (auto it = foundSkip->second->begin();it != foundSkip->second->end();it++) {
+							auto thisSz = it->Len;
+
+							if (thisSz <= y + In.size() && CMStringView(In.data() + y, thisSz) == (*it).View()) {
+								modifiedSkipBlockLen = true;
+								if (skipBlockStart == -1) {
+									skipBlockStart = y;
+								}
+								skipBlockLen += thisSz;
+
+								if (skipBlockStart + skipBlockLen == x) {
+									/*
+									 * Approached where we started to match, check if skip block:
+									 * ...is at the start of the Input
+									 */
+									if (skipBlockStart == 0) {
+										ret.Start = 0;
+										ret.Size = skipBlockLen + result.Size;
+										ret.Status = MATCH;
+										return ret;
+									}
+
+									/*
+									 * ...has a word boundary char right before the block
+									 * 
+									 * Search from start of skip block for word boundary touching the start of skip block (4 to account for longest word boundary string)
+									 * 
+									 * Need to adjust length 4 times to allow MatchWordBoundaryToRight to properly identify boundaries
+									 * 
+									 * Ex.:
+									 *            __ Touching here
+									 * ------|WBWB||SKIPSKIPSKIP|MATCHMATCH|----
+									 * 
+									 * Or more common case:
+									 *            __ Touching here
+									 * ---------|W||SKIPSKIPSKIP|MATCHMATCH|----
+									 */
+									for (auto sbs = 3;sbs >= 0;sbs--) {
+										if (skipBlockStart > sbs && ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(In.data() + skipBlockStart - (sbs+1), sbs+1))) {
+											ret.Start = skipBlockStart;
+
+											// Include skip block in result
+											ret.Size = skipBlockLen + result.Size;
+
+											ret.Status = MATCH;
+											return ret;
+										}
+									}
+
+									/*
+									 * There are no other possibilies to match as we have a contiguous skip block, so:
+									 * • all word boundaries are before it
+									 * • there are no word boundaries inside skip block
+									 * • there are no word boundaries touching between skip block and actual match, as we wouldn't get WORD_BOUNDARY_FAIL_START in the first place
+									 */
+								}
+							}
+						}
+					}
+
+					if (!modifiedSkipBlockLen) {
+						skipBlockStart = -1;
+						skipBlockLen = 0;
+					}
+				}
+
+				ret.Start = result.Start;
+				ret.Size = result.Size;
+				ret.Status = result.Status;
+			} else if (result.Status == WORD_BOUNDARY_FAIL_END) {
 				// Prefer word boundary failure results as they probably make more sense for human
 				ret.Start = result.Start;
 				ret.Size = result.Size;
 				ret.Status = result.Status;
-				continue;
 			} else {
 				// Final result - match or state push limit expired
 				return result;
