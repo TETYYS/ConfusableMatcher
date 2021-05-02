@@ -324,7 +324,7 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	if (In.data() == Match.data()) {
 		startPass = true;
 	} else {
-		auto distToStart = std::min((long long)4, Match.data() - In.data());
+		auto distToStart = std::min((size_t)4, (size_t)(Match.data() - In.data()));
 		startPass = ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(Match.data() - distToStart, distToStart));
 	}
 
@@ -335,8 +335,8 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	if (In.data() + In.size() == Match.data() + Match.size()) {
 		endPass = true;
 	} else {
-		auto matchEnd = (Match.data() + Match.size());
-		auto distToEnd = std::min((long long)4, In.data() + In.size() - matchEnd);
+		auto matchEnd = (size_t)(Match.data() + Match.size());
+		auto distToEnd = std::min((size_t)4, (size_t)In.data() + In.size() - matchEnd);
 		endPass = ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView(Match.data() + Match.size(), distToEnd));
 	}
 
