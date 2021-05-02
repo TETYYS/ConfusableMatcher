@@ -17,7 +17,7 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 include(CheckIncludeFileCXX)
 check_include_file_cxx(experimental/string_view HAVE_EXPERIMENTAL_STRING_VIEW)
 
-configure_file(${CMAKE_SOURCE_DIR}/Config.h.in ${CMAKE_SOURCE_DIR}/Config.h)
+configure_file(${PROJECT_SOURCE_DIR}/Config.h.in ${PROJECT_SOURCE_DIR}/Config.h)
 
 include_directories(ConfusableMatcher "sparsehash/build/src")
 include_directories(ConfusableMatcher "sparsehash/src")
@@ -25,7 +25,7 @@ if (WIN32)
 	include_directories(ConfusableMatcher "sparsehash/src/windows")
 endif()
 if(MSVC)
-    string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
+	string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
 endif()
 
 add_library(ConfusableMatcherStatic STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h" "ConfusableMatcherData.cpp")
@@ -52,18 +52,18 @@ target_compile_features(RunUnitTests PRIVATE cxx_std_17)
 target_compile_features(RunBenchmark PRIVATE cxx_std_17)
 
 if (NOT WIN32)
-	file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/sparsehash/build)
-	
+	file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/sparsehash/build)
+
 	add_custom_target(
 		SparsehashConfig
 		COMMAND ../configure CXXFLAGS="-Ofast"
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/sparsehash/build
+		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/sparsehash/build
 	)
 
 	add_custom_target(
 		SparsehashBuild
 		COMMAND make
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/sparsehash/build
+		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/sparsehash/build
 	)
 
 	add_dependencies(SparsehashBuild SparsehashConfig)
