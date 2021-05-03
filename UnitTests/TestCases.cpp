@@ -1168,3 +1168,136 @@ void Test48()
 	res = matcher.IndexOf("THERE IS NO SUCH $/V6", in, opts);
 	AssertMatch(res, 17, 4);
 }
+
+void Test49()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.StartIndex = 3;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("ee X", "X", opts);
+	AssertMatch(res, 3, 1);
+
+	res = matcher.IndexOf("ee aX", "X", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+	ASSERT_EQUAL(4, res.Start);
+	ASSERT_EQUAL(1, res.Size);
+
+	res = matcher.IndexOf("ee Xa", "X", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+	ASSERT_EQUAL(3, res.Start);
+	ASSERT_EQUAL(1, res.Size);
+
+	res = matcher.IndexOf("ee a X", "X", opts);
+	AssertMatch(res, 5, 1);
+
+	res = matcher.IndexOf("ee X a", "X", opts);
+	AssertMatch(res, 3, 1);
+
+	res = matcher.IndexOf("ee X;duper", "X", opts);
+	AssertMatch(res, 3, 1);
+
+	res = matcher.IndexOf("ee yes\uFEFFX", "X", opts);
+	AssertMatch(res, 9, 1);
+}
+
+void Test50()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+	opts.StartIndex = 3;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("ee QQQ", "Q", opts);
+	AssertMatch(res, 3, 3);
+
+	res = matcher.IndexOf("ee aQQQ", "Q", opts);
+	ASSERT(res.Status == WORD_BOUNDARY_FAIL_START || res.Status == WORD_BOUNDARY_FAIL_END);
+	AssertMatchMulti(res, { 4, 4, 4, 5, 5, 6 }, { 1, 2, 3, 1, 2, 1 }, res.Status);
+
+	res = matcher.IndexOf("ee QQQa", "Q", opts);
+
+	ASSERT(res.Status == WORD_BOUNDARY_FAIL_START || res.Status == WORD_BOUNDARY_FAIL_END);
+	AssertMatchMulti(res, { 3, 3, 3, 4, 4, 5 }, { 1, 2, 3, 1, 2, 1 }, res.Status);
+
+	res = matcher.IndexOf("ee a QQQ", "Q", opts);
+	AssertMatch(res, 5, 3);
+
+	res = matcher.IndexOf("ee QQQ a", "Q", opts);
+	AssertMatch(res, 3, 3);
+
+	res = matcher.IndexOf("ee QQQ;duper", "Q", opts);
+	AssertMatch(res, 3, 3);
+
+	res = matcher.IndexOf("ee yes\u202FQQQ", "Q", opts);
+	AssertMatch(res, 9, 3);
+}
+
+void Test51()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.StartIndex = 3;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("ee SUPER", "SUPER", opts);
+	AssertMatch(res, 3, 5);
+
+	res = matcher.IndexOf("ee aSUPER", "SUPER", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+	ASSERT_EQUAL(4, res.Start);
+	ASSERT_EQUAL(5, res.Size);
+
+	res = matcher.IndexOf("ee SUPERa", "SUPER", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+	ASSERT_EQUAL(3, res.Start);
+	ASSERT_EQUAL(5, res.Size);
+
+	res = matcher.IndexOf("ee a SUPER", "SUPER", opts);
+	AssertMatch(res, 5, 5);
+
+	res = matcher.IndexOf("ee SUPER a", "SUPER", opts);
+	AssertMatch(res, 3, 5);
+
+	res = matcher.IndexOf("ee SUPER;duper", "SUPER", opts);
+	AssertMatch(res, 3, 5);
+
+	res = matcher.IndexOf("ee yes\u202FSUPER", "SUPER", opts);
+	AssertMatch(res, 9, 5);
+}
+
+void Test52()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>(" ", " "));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.StartIndex = 3;
+
+	auto matcher = ConfusableMatcher(map, { " " });
+	auto res = matcher.IndexOf("ee a Q Q f", "Q Q", opts);
+	AssertMatch(res, 5, 3);
+
+	res = matcher.IndexOf("ee aQ Q f", "Q Q", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+	ASSERT_EQUAL(4, res.Start);
+	ASSERT_EQUAL(3, res.Size);
+
+	res = matcher.IndexOf("ee a Q Qf", "Q Q", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+	ASSERT_EQUAL(5, res.Start);
+	ASSERT_EQUAL(3, res.Size);
+}

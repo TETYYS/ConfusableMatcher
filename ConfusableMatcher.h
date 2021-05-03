@@ -34,23 +34,15 @@ namespace google
 
 struct MatchingState
 {
-	CMStringView In;
-	CMStringView Contains;
-	int StartingIndex;
-	int MatchedInChars;
-	int MatchedContainsChars;
-	CMStringView LastMatched;
-	int LastMatchedContainsPos;
+	size_t InPos;
+	size_t ContainsPos;
+	std::pair<size_t, size_t> LastMatched;
 
-	MatchingState(CMStringView In, CMStringView Contains, int StartingIndex, int MatchedInChars, int MatchedContainsChars, CMStringView LastMatched, int LastMatchedContainsPos)
+	MatchingState(size_t InPos, size_t ContainsPos, std::pair<size_t, size_t> LastMatched)
 	{
-		this->In = In;
-		this->Contains = Contains;
-		this->StartingIndex = StartingIndex;
-		this->MatchedInChars = MatchedInChars;
-		this->MatchedContainsChars = MatchedContainsChars;
+		this->InPos = InPos;
+		this->ContainsPos = ContainsPos;
 		this->LastMatched = LastMatched;
-		this->LastMatchedContainsPos = LastMatchedContainsPos;
 	}
 };
 
@@ -178,10 +170,10 @@ class ConfusableMatcher
 	static bool Initialized;
 
 	void Init();
-	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, StackVector<std::pair<size_t, size_t>> &Storage);
-	void GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<size_t, size_t>> &Storage);
+	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
+	void GetMappings(CMStringView Key, size_t KeyPos, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
 	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
-	CMReturn IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options);
+	CMReturn IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, size_t *StatePushes, const CMOptions Options);
 	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
 	int MatchWordBoundary(unsigned char i0);
 	int MatchWordBoundary(unsigned char i0, unsigned char i1);
