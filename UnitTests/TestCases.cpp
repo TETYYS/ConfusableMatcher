@@ -5,10 +5,10 @@ void Test1()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("N", "T"));
-	map.push_back(std::pair<std::string, std::string>("I", "E"));
-	map.push_back(std::pair<std::string, std::string>("C", "S"));
-	map.push_back(std::pair<std::string, std::string>("E", "T"));
+	map.push_back(std::pair("N", "T"));
+	map.push_back(std::pair("I", "E"));
+	map.push_back(std::pair("C", "S"));
+	map.push_back(std::pair("E", "T"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -21,8 +21,8 @@ void Test2()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("V", "VA"));
-	map.push_back(std::pair<std::string, std::string>("V", "VO"));
+	map.push_back(std::pair("V", "VA"));
+	map.push_back(std::pair("V", "VO"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -46,8 +46,8 @@ void Test3()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("A", "\U00000002\U00000003"));
-	map.push_back(std::pair<std::string, std::string>("B", "\U000000FA\U000000FF"));
+	map.push_back(std::pair("A", "\U00000002\U00000003"));
+	map.push_back(std::pair("B", "\U000000FA\U000000FF"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -60,8 +60,8 @@ void Test4()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("S", "$"));
-	map.push_back(std::pair<std::string, std::string>("D", "[)"));
+	map.push_back(std::pair("S", "$"));
+	map.push_back(std::pair("D", "[)"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -75,9 +75,9 @@ void Test5()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
-	map.push_back(std::pair<std::string, std::string>("N", "/\\"));
-	map.push_back(std::pair<std::string, std::string>("I", "/"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("N", "/\\"));
+	map.push_back(std::pair("I", "/"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -90,9 +90,9 @@ void Test6()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
-	map.push_back(std::pair<std::string, std::string>("V", "\\/"));
-	map.push_back(std::pair<std::string, std::string>("I", "/"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("V", "\\/"));
+	map.push_back(std::pair("I", "/"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -110,12 +110,12 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("N", "/[()[]]/"));
-	map.push_back(std::pair<std::string, std::string>("N", "\U000000f1"));
-	map.push_back(std::pair<std::string, std::string>("N", "|\\|"));
-	map.push_back(std::pair<std::string, std::string>("N", "\U00000245\U0000002f"));
-	map.push_back(std::pair<std::string, std::string>("N", "/IJ"));
-	map.push_back(std::pair<std::string, std::string>("N", "/|/"));
+	map.push_back(std::pair("N", "/[()[]]/"));
+	map.push_back(std::pair("N", "\U000000f1"));
+	map.push_back(std::pair("N", "|\\|"));
+	map.push_back(std::pair("N", "\U00000245\U0000002f"));
+	map.push_back(std::pair("N", "/IJ"));
+	map.push_back(std::pair("N", "/|/"));
 
 	std::vector<std::string> ns = { "\U000004c5", "\U000003a0", "\U00000418", "\U0001d427", "\U0001d45b", "\U0001d48f", "\U0001d4c3", "\U0001d4f7", "\U0001d52b", "\U0001d55f", "\U0001d593", "\U0001d5c7", "\U0001d5fb", "\U0001d62f", "\U0001d663", "\U0001d697", "\U00000578", "\U0000057c", "\U0000ff2e", "\U00002115", "\U0001d40d", "\U0001d441", "\U0001d475", "\U0001d4a9", "\U0001d4dd", "\U0001d511", "\U0001d579", "\U0001d5ad", "\U0001d5e1", "\U0001d615", "\U0001d649", "\U0001d67d", "\U0000039d", "\U0001d6b4", "\U0001d6ee", "\U0001d728", "\U0001d762", "\U0001d79c", "\U0000a4e0", "\U00000143", "\U00000145", "\U00000147", "\U0000014b", "\U0000019d", "\U000001f8", "\U00000220", "\U0000039d", "\U00001e44", "\U00001e46", "\U00001e48", "\U00001e4a", "\U000020a6", "\U00001f20", "\U00001f21", "\U00001f22", "\U00001f23", "\U00001f24", "\U00001f25", "\U00001f26", "\U00001f27", "\U00001f74", "\U00001f75", "\U00001f90", "\U00001f91", "\U00001f92", "\U00001f93", "\U00001f94", "\U00001f95", "\U00001f96", "\U00001f97", "\U00001fc2", "\U00001fc3", "\U00001fc4", "\U00001fc6", "\U00001fc7", "\U000000f1", "\U00000144", "\U00000146", "\U00000148", "\U00000149", "\U0000014a", "\U0000019e", "\U000001f9", "\U00000235", "\U00000272", "\U00000273", "\U00000274", "\U00001d70", "\U00001d87", "\U00001e45", "\U00001e47", "\U00001e49", "\U00001e4b" };
 	std::vector<std::string> is = { "\U00001ec8", "\U00000079", "\U00000069", "\U00000031", "\U0000007c", "\U0000006c", "\U0000006a", "\U00000021", "\U0000002f", "\U0000005c\U0000005c", "\U0000ff49", "\U000000a1", "\U00002170", "\U00002139", "\U00002148", "\U0001d422", "\U0001d456", "\U0001d48a", "\U0001d4be", "\U0001d4f2", "\U0001d526", "\U0001d55a", "\U0001d58e", "\U0001d5c2", "\U0001d5f6", "\U0001d62a", "\U0001d65e", "\U0001d692", "\U00000131", "\U0001d6a4", "\U0000026a", "\U00000269", "\U000003b9", "\U00001fbe", "\U0000037a", "\U0001d6ca", "\U0001d704", "\U0001d73e", "\U0001d778", "\U0001d7b2", "\U00000456", "\U000024be", "\U0000a647", "\U000004cf", "\U0000ab75", "\U000013a5", "\U00000263", "\U00001d8c", "\U0000ff59", "\U0001d432", "\U0001d466", "\U0001d49a", "\U0001d4ce", "\U0001d502", "\U0001d536", "\U0001d56a", "\U0001d59e", "\U0001d5d2", "\U0001d606", "\U0001d63a", "\U0001d66e", "\U0001d6a2", "\U0000028f", "\U00001eff", "\U0000ab5a", "\U000003b3", "\U0000213d", "\U0001d6c4", "\U0001d6fe", "\U0001d738", "\U0001d772", "\U0001d7ac", "\U00000443", "\U000004af", "\U000010e7", "\U0000ff39", "\U0001d418", "\U0001d44c", "\U0001d480", "\U0001d4b4", "\U0001d4e8", "\U0001d51c", "\U0001d550", "\U0001d584", "\U0001d5b8", "\U0001d5ec", "\U0001d620", "\U0001d654", "\U0001d688", "\U000003a5", "\U000003d2", "\U0001d6bc", "\U0001d6f6", "\U0001d730", "\U0001d76a", "\U0001d7a4", "\U00002ca8", "\U00000423", "\U000004ae", "\U000013a9", "\U000013bd", "\U0000a4ec", "\U00000176", "\U00000178", "\U000001b3", "\U00000232", "\U0000024e", "\U0000028f", "\U00001e8e", "\U00001ef2", "\U00001ef4", "\U00001ef6", "\U00001ef8", "\U0000ff39", "\U000000cc", "\U000000cd", "\U000000ce", "\U000000cf", "\U00000128", "\U0000012a", "\U0000012c", "\U0000012e", "\U00000130", "\U00000196", "\U00000197", "\U000001cf", "\U00000208", "\U0000020a", "\U0000026a", "\U0000038a", "\U00000390", "\U00000399", "\U000003aa", "\U00000406", "\U0000040d", "\U00000418", "\U00000419", "\U000004e2", "\U000004e4", "\U00001e2c", "\U00001e2e", "\U00001ec8", "\U00001eca", "\U00001fd8", "\U00001fd9", "\U00002160", "\U0000ff29", "\U000030a7", "\U000030a8", "\U0000ff6a", "\U0000ff74", "\U000000ec", "\U000000ed", "\U000000ee", "\U000000ef", "\U00000129", "\U0000012b", "\U0000012d", "\U0000012f", "\U00000131", "\U000001d0", "\U00000209", "\U0000020b", "\U00000268", "\U00000269", "\U00000365", "\U000003af", "\U000003ca", "\U00000438", "\U00000439", "\U00000456", "\U0000045d", "\U000004e3", "\U000004e5", "\U00001e2d", "\U00001e2f", "\U00001ec9", "\U00001ecb", "\U00001f30", "\U00001f31", "\U00001f32", "\U00001f33", "\U00001f34", "\U00001f35", "\U00001f36", "\U00001f37", "\U00001f76", "\U00001f77", "\U00001fbe", "\U00001fd0", "\U00001fd1", "\U00001fd2", "\U00001fd3", "\U00001fd6", "\U00001fd7", "\U0000ff49", "\U00001d85", "\U00001e37", "\U00001e39", "\U00001e3b", "\U00001e3d", "\U000000fd", "\U000000ff", "\U00000177", "\U000001b4", "\U00000233", "\U0000024f", "\U0000028e", "\U000002b8", "\U00001e8f", "\U00001e99", "\U00001ef3", "\U00001ef5", "\U00001ef7", "\U00001ef9", "\U0000ff59" };
@@ -128,11 +128,11 @@ std::vector<std::pair<std::string, std::string>> GetDefaultMap()
 	for (auto x = 0;x < 5;x++) {
 		for (auto chr : s[x]) {
 			switch (x) {
-				case 0: map.push_back(std::pair<std::string, std::string>("N", chr)); break;
-				case 1: map.push_back(std::pair<std::string, std::string>("I", chr)); break;
-				case 2: map.push_back(std::pair<std::string, std::string>("G", chr)); break;
-				case 3: map.push_back(std::pair<std::string, std::string>("E", chr)); break;
-				case 4: map.push_back(std::pair<std::string, std::string>("R", chr)); break;
+				case 0: map.push_back(std::pair("N", chr)); break;
+				case 1: map.push_back(std::pair("I", chr)); break;
+				case 2: map.push_back(std::pair("G", chr)); break;
+				case 3: map.push_back(std::pair("E", chr)); break;
+				case 4: map.push_back(std::pair("R", chr)); break;
 			}
 		}
 	}
@@ -176,7 +176,7 @@ ConfusableMatcher *LidlNormalizerCMSetup()
 	};
 	
 	for (auto x = 0;x < keys.size();x++)
-		map.push_back(std::pair<std::string, std::string>(keys[x], vals[x]));
+		map.push_back(std::pair(keys[x], vals[x]));
 
 	auto matcher = new ConfusableMatcher(map, { });
 
@@ -253,25 +253,25 @@ void Test9()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 
-	map.push_back(std::pair<std::string, std::string>("B", "A"));
-	map.push_back(std::pair<std::string, std::string>("B", "AB"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABC"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCD"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDE"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEF"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFG"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGH"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHI"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJ"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJK"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKL"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLM"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMN"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNO"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOP"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQ"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQR"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQRS"));
+	map.push_back(std::pair("B", "A"));
+	map.push_back(std::pair("B", "AB"));
+	map.push_back(std::pair("B", "ABC"));
+	map.push_back(std::pair("B", "ABCD"));
+	map.push_back(std::pair("B", "ABCDE"));
+	map.push_back(std::pair("B", "ABCDEF"));
+	map.push_back(std::pair("B", "ABCDEFG"));
+	map.push_back(std::pair("B", "ABCDEFGH"));
+	map.push_back(std::pair("B", "ABCDEFGHI"));
+	map.push_back(std::pair("B", "ABCDEFGHIJ"));
+	map.push_back(std::pair("B", "ABCDEFGHIJK"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKL"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLM"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMN"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNO"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOP"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQ"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQR"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQRS"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 1000;
@@ -284,45 +284,45 @@ void Test9()
 	AssertMatchMulti(res, { 0, 1 }, { 1, 1 });
 
 	map.clear();
-	map.push_back(std::pair<std::string, std::string>("B", "A"));
-	map.push_back(std::pair<std::string, std::string>("B", "AB"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABC"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCD"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDE"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEF"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFG"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGH"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHI"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJ"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJK"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKL"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLM"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMN"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNO"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQ"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQR"));
-	map.push_back(std::pair<std::string, std::string>("B", "ABCDEFGHIJKLMNOPQRS"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0123456789"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ012345678"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ01234567"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0123456"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ012345"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ01234"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0123"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ012"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ01"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ0"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXYZ"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWXY"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVWX"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUVW"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTUV"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRSTU"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRST"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQRS"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQR"));
-	map.push_back(std::pair<std::string, std::string>("B", "PQ"));
-	map.push_back(std::pair<std::string, std::string>("B", "P"));
+	map.push_back(std::pair("B", "A"));
+	map.push_back(std::pair("B", "AB"));
+	map.push_back(std::pair("B", "ABC"));
+	map.push_back(std::pair("B", "ABCD"));
+	map.push_back(std::pair("B", "ABCDE"));
+	map.push_back(std::pair("B", "ABCDEF"));
+	map.push_back(std::pair("B", "ABCDEFG"));
+	map.push_back(std::pair("B", "ABCDEFGH"));
+	map.push_back(std::pair("B", "ABCDEFGHI"));
+	map.push_back(std::pair("B", "ABCDEFGHIJ"));
+	map.push_back(std::pair("B", "ABCDEFGHIJK"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKL"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLM"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMN"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNO"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQ"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQR"));
+	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQRS"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ0123456789"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ012345678"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ01234567"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ0123456"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ012345"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ01234"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ0123"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ012"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ01"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ0"));
+	map.push_back(std::pair("B", "PQRSTUVWXYZ"));
+	map.push_back(std::pair("B", "PQRSTUVWXY"));
+	map.push_back(std::pair("B", "PQRSTUVWX"));
+	map.push_back(std::pair("B", "PQRSTUVW"));
+	map.push_back(std::pair("B", "PQRSTUV"));
+	map.push_back(std::pair("B", "PQRSTU"));
+	map.push_back(std::pair("B", "PQRST"));
+	map.push_back(std::pair("B", "PQRS"));
+	map.push_back(std::pair("B", "PQR"));
+	map.push_back(std::pair("B", "PQ"));
+	map.push_back(std::pair("B", "P"));
 
 	auto matcher2 = ConfusableMatcher(map, { });
 	
@@ -360,13 +360,12 @@ void Test10()
 void Test11()
 {
 	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair("A", "A"));
+	map.push_back(std::pair("A", "A"));
+	map.push_back(std::pair("A", "A"));
+	map.push_back(std::pair("A", "A"));
 
 	auto matcher = ConfusableMatcher(map, { });
-
-	matcher.AddMapping("A", "A", false);
-	matcher.AddMapping("A", "A", false);
-	matcher.AddMapping("A", "A", false);
-	matcher.AddMapping("A", "A", false);
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
@@ -393,26 +392,31 @@ void Test12()
 
 void Test13()
 {
-	std::vector<std::pair<std::string, std::string>> map;
-	auto matcher = ConfusableMatcher(map, { });
-	ASSERT_THROWS(matcher.AddMapping("", "?", false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping("?", "", false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping("", "", false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x00", 1), "?", false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping("?", std::string("\x00", 1), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x01", 1), "?", false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping("?", std::string("\x01", 1), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x00", 1), std::string("\x01", 1), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x00", 1), std::string("\x00", 1), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x01", 1), std::string("\x00", 1), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x01", 1), std::string("\x01", 1), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x01\x00", 2), std::string("\x00\x01", 2), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("A\x00", 2), std::string("\x00""A", 2), false), std::exception);
-	ASSERT_THROWS(matcher.AddMapping(std::string("\x01\x00", 2), std::string("\x00\x01", 2), false), std::exception);
-	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x00", 2), std::string("A\x01", 2), false), true);
-	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x01", 2), std::string("A\x00", 2), false), true);
-	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x00", 2), std::string("A\x00", 2), false), true);
-	ASSERT_EQUAL(matcher.AddMapping(std::string("A\x01", 2), std::string("A\x01", 2), false), true);
+	auto test = [](std::string k, std::string v)
+	{
+		std::vector<std::pair<std::string, std::string>> map;
+		map.push_back(std::pair(k, v));
+		auto matcher = ConfusableMatcher(map, { });
+	};
+
+	ASSERT_THROWS(test("", "?"), std::exception);
+	ASSERT_THROWS(test("?", ""), std::exception);
+	ASSERT_THROWS(test("", ""), std::exception);
+	ASSERT_THROWS(test(std::string("\x00", 1), "?"), std::exception);
+	ASSERT_THROWS(test("?", std::string("\x00", 1)), std::exception);
+	ASSERT_THROWS(test(std::string("\x01", 1), "?"), std::exception);
+	ASSERT_THROWS(test("?", std::string("\x01", 1)), std::exception);
+	ASSERT_THROWS(test(std::string("\x00", 1), std::string("\x01", 1)), std::exception);
+	ASSERT_THROWS(test(std::string("\x00", 1), std::string("\x00", 1)), std::exception);
+	ASSERT_THROWS(test(std::string("\x01", 1), std::string("\x00", 1)), std::exception);
+	ASSERT_THROWS(test(std::string("\x01", 1), std::string("\x01", 1)), std::exception);
+	ASSERT_THROWS(test(std::string("\x01\x00", 2), std::string("\x00\x01", 2)), std::exception);
+	ASSERT_THROWS(test(std::string("A\x00", 2), std::string("\x00""A", 2)), std::exception);
+	ASSERT_THROWS(test(std::string("\x01\x00", 2), std::string("\x00\x01", 2)), std::exception);
+	test(std::string("A\x00", 2), std::string("A\x01", 2));
+	test(std::string("A\x01", 2), std::string("A\x00", 2));
+	test(std::string("A\x00", 2), std::string("A\x00", 2));
+	test(std::string("A\x01", 2), std::string("A\x01", 2));
 }
 
 void Test14()
@@ -457,10 +461,9 @@ void Test14()
 void Test15()
 {
 	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair(".", "."));
 
 	auto matcher = ConfusableMatcher(map, { "." });
-
-	matcher.AddMapping(".", ".", false);
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -472,8 +475,8 @@ void Test15()
 void Test16()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
-	map.push_back(std::pair<std::string, std::string>("N", "\\/\\"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("N", "\\/\\"));
 
 	auto matcher = ConfusableMatcher(map, { });
 
@@ -487,8 +490,8 @@ void Test16()
 void Test17()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("N", "_"));
-	map.push_back(std::pair<std::string, std::string>("N", "__"));
+	map.push_back(std::pair("N", "_"));
+	map.push_back(std::pair("N", "__"));
 
 	auto matcher = ConfusableMatcher(map, {});
 
@@ -502,10 +505,10 @@ void Test17()
 void Test18()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("N", "12345"));
-	map.push_back(std::pair<std::string, std::string>("A", "1"));
-	map.push_back(std::pair<std::string, std::string>("A", "5"));
-	map.push_back(std::pair<std::string, std::string>("A", "234"));
+	map.push_back(std::pair("N", "12345"));
+	map.push_back(std::pair("A", "1"));
+	map.push_back(std::pair("A", "5"));
+	map.push_back(std::pair("A", "234"));
 
 	auto matcher = ConfusableMatcher(map, {});
 
@@ -519,9 +522,9 @@ void Test18()
 void Test19()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("A", "1"));
-	map.push_back(std::pair<std::string, std::string>("B", "1"));
-	map.push_back(std::pair<std::string, std::string>("C", "1"));
+	map.push_back(std::pair("A", "1"));
+	map.push_back(std::pair("B", "1"));
+	map.push_back(std::pair("C", "1"));
 
 	auto matcher = ConfusableMatcher(map, {});
 
@@ -535,9 +538,9 @@ void Test19()
 void Test20()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("A", "1"));
-	map.push_back(std::pair<std::string, std::string>("B", "1"));
-	map.push_back(std::pair<std::string, std::string>("C", "1"));
+	map.push_back(std::pair("A", "1"));
+	map.push_back(std::pair("B", "1"));
+	map.push_back(std::pair("C", "1"));
 
 	auto matcher = ConfusableMatcher(map, {}, false);
 
@@ -557,9 +560,9 @@ void Test20()
 void Test21()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("1", "AB"));
-	map.push_back(std::pair<std::string, std::string>("1", "CD"));
-	map.push_back(std::pair<std::string, std::string>("2", "EEE"));
+	map.push_back(std::pair("1", "AB"));
+	map.push_back(std::pair("1", "CD"));
+	map.push_back(std::pair("2", "EEE"));
 
 	auto matcher = ConfusableMatcher(map, {}, false);
 
@@ -581,7 +584,7 @@ void Test22()
 {
 	std::vector<std::pair<std::string, std::string>> map;
 	for (auto x = 0;x < 500;x++)
-		map.push_back(std::pair<std::string, std::string>("123", std::to_string(x)));
+		map.push_back(std::pair("123", std::to_string(x)));
 
 	auto matcher = ConfusableMatcher(map, {}, false);
 
@@ -695,9 +698,9 @@ void Test28()
 void Test29()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
-	map.push_back(std::pair<std::string, std::string>("N", "//A"));
-	map.push_back(std::pair<std::string, std::string>("N", "//"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("N", "//A"));
+	map.push_back(std::pair("N", "//"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -710,7 +713,7 @@ void Test29()
 void Test30()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("N", "/"));
+	map.push_back(std::pair("N", "/"));
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
@@ -848,7 +851,7 @@ void Test34()
 void Test35()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>(" ", " "));
+	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -872,7 +875,7 @@ void Test35()
 void Test36()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>(" ", " "));
+	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -886,12 +889,12 @@ void Test36()
 void Test37()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("a", "a"));
-	map.push_back(std::pair<std::string, std::string>("s", "s"));
-	map.push_back(std::pair<std::string, std::string>(" ", " "));
-	map.push_back(std::pair<std::string, std::string>("i", "i"));
-	map.push_back(std::pair<std::string, std::string>("m", "m"));
-	map.push_back(std::pair<std::string, std::string>("p", "p"));
+	map.push_back(std::pair("a", "a"));
+	map.push_back(std::pair("s", "s"));
+	map.push_back(std::pair(" ", " "));
+	map.push_back(std::pair("i", "i"));
+	map.push_back(std::pair("m", "m"));
+	map.push_back(std::pair("p", "p"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -975,10 +978,10 @@ void Test40()
 void Test41()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("i", "1"));
-	map.push_back(std::pair<std::string, std::string>("s", "s"));
-	map.push_back(std::pair<std::string, std::string>("m", "m"));
-	map.push_back(std::pair<std::string, std::string>("p", "p"));
+	map.push_back(std::pair("i", "1"));
+	map.push_back(std::pair("s", "s"));
+	map.push_back(std::pair("m", "m"));
+	map.push_back(std::pair("p", "p"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -1001,18 +1004,18 @@ void Test42()
 
 	auto matcher = ConfusableMatcher(map, { "░" });
 	auto res = matcher.IndexOf("░S░I░M░P░", "SIMP", opts);
-	AssertMatchMulti(res, { 0, 3 }, { 19, 13 });
+	AssertMatch(res, 3, 13);
 
 	auto matcher2 = ConfusableMatcher(map, { "Ž" });
 	res = matcher2.IndexOf("ŽSŽIŽMŽPŽ", "SIMP", opts);
-	AssertMatch(res, 0, 14);
+	AssertMatch(res, 2, 12);
 }
 
 void Test43()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("S", "░"));
-	map.push_back(std::pair<std::string, std::string>("S", "Ž"));
+	map.push_back(std::pair("S", "░"));
+	map.push_back(std::pair("S", "Ž"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -1021,7 +1024,7 @@ void Test43()
 
 	auto matcher = ConfusableMatcher(map, { "░" });
 	auto res = matcher.IndexOf("░S░I░M░P░", "SIMP", opts);
-	AssertMatchMulti(res, { 0, 0 }, { 19, 16 });
+	AssertMatch(res, 0, 16);
 
 	auto matcher2 = ConfusableMatcher(map, { "Ž" });
 	res = matcher2.IndexOf("ŽSŽIŽMŽPŽ", "SIMP", opts);
@@ -1031,7 +1034,7 @@ void Test43()
 void Test44()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>(" ", " "));
+	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -1054,25 +1057,25 @@ void Test45()
 
 	auto matcher = ConfusableMatcher(map, { "X" });
 	auto res = matcher.IndexOf("XXABC", "ABC", opts);
-	AssertMatch(res, 0, 5);
+	AssertMatch(res, 2, 3);
 
 	res = matcher.IndexOf("X XABC", "ABC", opts);
-	AssertMatch(res, 2, 4);
+	AssertMatch(res, 3, 3);
 
 	res = matcher.IndexOf("X૰XABC", "ABC", opts);
-	AssertMatch(res, 4, 4);
+	AssertMatch(res, 5, 3);
 
 	res = matcher.IndexOf(" X XABC", "ABC", opts);
-	AssertMatch(res, 3, 4);
+	AssertMatch(res, 4, 3);
 
 	res = matcher.IndexOf(" XXABC", "ABC", opts);
-	AssertMatch(res, 1, 5);
+	AssertMatch(res, 3, 3);
 
 	res = matcher.IndexOf(" XX ABC", "ABC", opts);
 	AssertMatch(res, 4, 3);
 
 	res = matcher.IndexOf("XXXX XXABC", "ABC", opts);
-	AssertMatch(res, 5, 5);
+	AssertMatch(res, 7, 3);
 }
 
 void Test46()
@@ -1085,21 +1088,51 @@ void Test46()
 	opts.MatchRepeating = true;
 
 	auto matcher = ConfusableMatcher(map, { });
+
+	auto res = matcher.IndexOf("!A", "A", opts);
+	AssertMatch(res, 1, 1);
 	
-	ASSERT(matcher.MatchWordBoundaryToRight("!"));
-	ASSERT(matcher.MatchWordBoundaryToRight("fsd!"));
-	ASSERT(matcher.MatchWordBoundaryToRight("¶"));
-	ASSERT(matcher.MatchWordBoundaryToRight("૰"));
-	ASSERT(matcher.MatchWordBoundaryToRight("𝠀"));
-	ASSERT(!matcher.MatchWordBoundaryToRight("𞋀"));
-	ASSERT(!matcher.MatchWordBoundaryToRight("ꡪa"));
-	ASSERT(!matcher.MatchWordBoundaryToRight("aꡪ"));
-	ASSERT(!matcher.MatchWordBoundaryToRight("ꡪ"));
-	ASSERT(!matcher.MatchWordBoundaryToRight("!a"));
-	ASSERT(matcher.MatchWordBoundaryToRight("a!"));
-	ASSERT(matcher.MatchWordBoundaryToRight("G!a!"));
-	ASSERT(matcher.MatchWordBoundaryToRight("¶a!"));
-	ASSERT(!matcher.MatchWordBoundaryToRight("¶!a"));
+	res = matcher.IndexOf("FSD!XCV", "XCV", opts);
+	AssertMatch(res, 4, 3);
+
+	res = matcher.IndexOf("¶A", "A", opts);
+	AssertMatch(res, 2, 1);
+
+	res = matcher.IndexOf("૰A", "A", opts);
+	AssertMatch(res, 3, 1);
+
+	res = matcher.IndexOf("𝠀A", "A", opts);
+	AssertMatch(res, 4, 1);
+
+	res = matcher.IndexOf("𞋀A", "A", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+
+	res = matcher.IndexOf("ꡪaXCV", "XCV", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+
+	res = matcher.IndexOf("aꡪXCV", "XCV", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+
+	res = matcher.IndexOf("ꡪXCV", "XCV", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+
+	res = matcher.IndexOf("!aXCV", "XCV", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+
+	res = matcher.IndexOf("a!XCV", "XCV", opts);
+	AssertMatch(res, 2, 3);
+
+	res = matcher.IndexOf("G!a!XCV", "XCV", opts);
+	AssertMatch(res, 4, 3);
+
+	res = matcher.IndexOf("¶a!XCV", "XCV", opts);
+	AssertMatch(res, 4, 3);
+
+	res = matcher.IndexOf("¶!aXCV", "XCV", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_START, res.Status);
+
+	res = matcher.IndexOf("x\xC0¶XCV", "XCV", opts);
+	AssertMatch(res, 4, 3);
 }
 
 void Test47()
@@ -1113,37 +1146,66 @@ void Test47()
 
 	auto matcher = ConfusableMatcher(map, { });
 
-	ASSERT(matcher.MatchWordBoundaryToLeft(" a"));
-	ASSERT(matcher.MatchWordBoundaryToLeft(" "));
-	ASSERT(matcher.MatchWordBoundaryToLeft("!fsd"));
-	ASSERT(matcher.MatchWordBoundaryToLeft("¶"));
-	ASSERT(matcher.MatchWordBoundaryToLeft("૰"));
-	ASSERT(matcher.MatchWordBoundaryToLeft("𝠀"));
-	ASSERT(!matcher.MatchWordBoundaryToLeft("𞋀"));
-	ASSERT(!matcher.MatchWordBoundaryToLeft("ꡪa"));
-	ASSERT(!matcher.MatchWordBoundaryToLeft("aꡪ"));
-	ASSERT(!matcher.MatchWordBoundaryToLeft("ꡪ"));
-	ASSERT(!matcher.MatchWordBoundaryToLeft("a!"));
-	ASSERT(matcher.MatchWordBoundaryToLeft("!a"));
-	ASSERT(matcher.MatchWordBoundaryToLeft("!a!G"));
-	ASSERT(matcher.MatchWordBoundaryToLeft("!a¶"));
-	ASSERT(!matcher.MatchWordBoundaryToLeft("a!¶"));
+	auto res = matcher.IndexOf("B a", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B ", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B!fsd", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B¶", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B૰", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B𝠀", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B𞋀", "B", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+
+	res = matcher.IndexOf("Bꡪa", "B", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+
+	res = matcher.IndexOf("Baꡪ", "B", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+
+	res = matcher.IndexOf("Bꡪ", "B", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+
+	res = matcher.IndexOf("Ba!", "B", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
+
+	res = matcher.IndexOf("B!a", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B!a!G", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("B!a¶", "B", opts);
+	AssertMatch(res, 0, 1);
+
+	res = matcher.IndexOf("Ba!¶", "B", opts);
+	ASSERT_EQUAL(WORD_BOUNDARY_FAIL_END, res.Status);
 }
 
 void Test48()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>("T", "7"));
-	map.push_back(std::pair<std::string, std::string>("H", "|-|"));
-	map.push_back(std::pair<std::string, std::string>("H", "н"));
-	map.push_back(std::pair<std::string, std::string>("I", "1"));
-	map.push_back(std::pair<std::string, std::string>("I", "|"));
-	map.push_back(std::pair<std::string, std::string>("N", "и"));
-	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
-	map.push_back(std::pair<std::string, std::string>("N", "/v"));
-	map.push_back(std::pair<std::string, std::string>("N", "/V"));
-	map.push_back(std::pair<std::string, std::string>("G", "6"));
-	map.push_back(std::pair<std::string, std::string>("THI", "$"));
+	map.push_back(std::pair("T", "7"));
+	map.push_back(std::pair("H", "|-|"));
+	map.push_back(std::pair("H", "н"));
+	map.push_back(std::pair("I", "1"));
+	map.push_back(std::pair("I", "|"));
+	map.push_back(std::pair("N", "и"));
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("N", "/v"));
+	map.push_back(std::pair("N", "/V"));
+	map.push_back(std::pair("G", "6"));
+	map.push_back(std::pair("THI", "$"));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -1280,7 +1342,7 @@ void Test51()
 void Test52()
 {
 	std::vector<std::pair<std::string, std::string>> map;
-	map.push_back(std::pair<std::string, std::string>(" ", " "));
+	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
 	opts.StatePushLimit = 50000;
@@ -1312,5 +1374,4 @@ void Test53()
 	opts.StartIndex = 3;
 
 	auto matcher = ConfusableMatcher(map, { "\xff" });
-	
 }

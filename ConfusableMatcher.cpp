@@ -165,7 +165,6 @@ void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Ou
 			continue;
 
 		// Whole key found, return value array
-
 		auto values = (*keyIterator)->second;
 
 		for (auto valueIterator = values->begin();valueIterator != values->end();valueIterator++) {
@@ -180,10 +179,13 @@ CMStringPosPointers *ConfusableMatcher::ComputeStringPosPointers(std::string Con
 {
 	auto ret = new CMStringPosPointers();
 
+	// Loop for each char
 	for (auto x = 0;x < Contains.size();x++) {
 		std::vector<std::pair<size_t /* Key len */, const CMInnerHashMap*>> vec;
 
 		auto keyArr = TheMap->find(Contains[x]);
+
+		// Find and put all inner hashmaps, together with key substring length
 		if (keyArr != TheMap->end()) {
 			for (auto keyIterator = keyArr->second->begin();keyIterator != keyArr->second->end();keyIterator++) {
 				if ((*keyIterator)->first.Len > Contains.size() - x || ((*keyIterator)->first).View() != CMStringView(Contains.data() + x, (*keyIterator)->first.Len))
@@ -193,6 +195,7 @@ CMStringPosPointers *ConfusableMatcher::ComputeStringPosPointers(std::string Con
 			}
 		}
 
+		// Puts at `x` pos
 		ret->PosPointers.push_back(vec);
 	}
 
@@ -203,13 +206,17 @@ void ConfusableMatcher::GetMappings(CMStringPosPointers *PosPointers, size_t Pos
 {
 	assert(Value.size() - ValuePos >= 1);
 
+	// Get CMInnerHashMap for provided key by pos
 	const auto& vals = PosPointers->PosPointers[Pos];
 
 	for (auto x = 0;x < vals.size();x++) {
 		const auto inner = vals[x];
+
+		// For if we are looking for specific substring of key
 		if (ExactSize != -1 && inner.first != ExactSize)
 			continue;
 
+		// Value searching
 		auto foundArr = inner.second->find(Value[ValuePos]);
 		if (foundArr == inner.second->end())
 			continue;
@@ -256,11 +263,13 @@ void ConfusableMatcher::GetMappings(const CMStringView Key, size_t KeyPos, const
 
 int ConfusableMatcher::MatchWordBoundary(unsigned char i0)
 {
+	// Nothing special for 0-255
 	return ConfusableMatcher::WordBoundaries[i0];
 }
 
 int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1)
 {
+	// UTF8 decode and find in word boundaries bitset
 	auto c = ((i0 & 0x1F) << 6) | (i1 & 0x3F);
 
 	if ((i1 & 0xC0) == 0x80)
@@ -279,6 +288,7 @@ int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, uns
 
 int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3)
 {
+	// Here also check for length as it can exceed it
 	auto c = ((i0 & 0x07) << 18) | ((i1 & 0x3F) << 12) | ((i2 & 0x3F) << 6) | (i3 & 0x3F);
 	if ((i1 & 0xC0) == 0x80 && ((i2 & 0xC0) == 0x80))
 		return c < ConfusableMatcher::WordBoundaries.size() && ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
@@ -287,12 +297,25 @@ int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, uns
 
 bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
 {
+	/*
+	 * When searching to left from right, it doesn't need to worry about anything special
+	 * as first char will be always in the same spot
+	 */
 	assert(In.size() < 5);
 	
 	if (In.size() == 0)
 		return false;
 
-#define process(i) if ((i) == 1) { return true; } else if ((i) == 0) { return false; }
+	/*
+	 * 1 for match, 0 for match failure and -1 for UTF8 decode failure
+	 * 
+	 * For UTF8 decode failure it can try other length codepoints
+	 * 
+	 * For match failure it must immediately return because codepoint has been consumed
+	 * and it is searching for word boundary chars at the start of `In`
+	 */
+	int res;
+#define process(i) { res = (i); if (res == 1) { return true; } else if (res == 0) { return false; } }
 
 	if (In.size() == 4) {
 		process(MatchWordBoundary(In[0], In[1], In[2], In[3]));
@@ -314,12 +337,25 @@ bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
 
 size_t ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 {
+	/*
+	 * When searching to right from left, it needs to check everything at most four times as it, for example,
+	 * can decode 3 char length codepoint without a match and then find a match at fourth position
+	 */
 	assert(In.size() < 5);
 	
 	if (In.size() == 0)
 		return false;
 
-#define process(i, x) if ((i) == 1) return (x); else if ((i) == 0) { return MatchWordBoundaryToRight(CMStringView(In.data() + x, In.size() - x)); }
+	/*
+	 * 1 for match, 0 for UTF8 decode but match failure and -1 for UTF8 decode failure
+	 * 
+	 * For match failure it needs to skip whole char as codepoint is consumed and try matching unconsumed part again
+	 * 
+	 * For UTF8 decode failure it can still try decoding codepoints that touch the right as it doesn't
+	 * need word boundary chars that are not actually touching the match string
+	 */
+	int res;
+#define process(i, x) { res = (i); if (res == 1) { return (x); } else if (res == 0) { return MatchWordBoundaryToRight(CMStringView(In.data() + x, In.size() - x)); } }
 
 	if (In.size() == 4) {
 		process(MatchWordBoundary(In[0], In[1], In[2], In[3]), 4);
@@ -351,9 +387,11 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	bool startPass = false, endPass = false;
 
 	if (In.data() == Match.data()) {
+		// Check if it is at the beginning of In
 		startPass = true;
 	} else {
-		auto distToStart = std::min((size_t)4, (size_t)(Match.data() - In.data()));
+		// Check for word boundary char that is touching left of Match, thus matching from left to right
+		auto distToStart = std::min((size_t)4 /* Max 4 chars of largest codepoint */, (size_t)(Match.data() - In.data()));
 		startPass = ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(Match.data() - distToStart, distToStart));
 	}
 
@@ -362,10 +400,12 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	}
 
 	if (In.data() + In.size() == Match.data() + Match.size()) {
+		// Check if it is at the end of In
 		endPass = true;
 	} else {
+		// Check for word boundary char that is touching right of Match, thus matching from right to left
 		auto matchEnd = (size_t)(Match.data() + Match.size());
-		auto distToEnd = std::min((size_t)4, (size_t)In.data() + In.size() - matchEnd);
+		auto distToEnd = std::min((size_t)4 /* Max 4 chars of largest codepoint */, (size_t)In.data() + In.size() - matchEnd);
 		endPass = ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView(Match.data() + Match.size(), distToEnd));
 	}
 
@@ -626,8 +666,8 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 									 * ...is at the start of the Input
 									 */
 									if (skipBlockStart == 0) {
-										ret.Start = 0;
-										ret.Size = skipBlockLen + result.Size;
+										ret.Start = skipBlockLen;
+										ret.Size = result.Size;
 										ret.Status = MATCH;
 										return ret;
 									}
@@ -649,11 +689,8 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 									 */
 									for (auto sbs = 3;sbs >= 0;sbs--) {
 										if (skipBlockStart > sbs && ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(In.data() + skipBlockStart - (sbs+1), sbs+1))) {
-											ret.Start = skipBlockStart;
-
-											// Include skip block in result
-											ret.Size = skipBlockLen + result.Size;
-
+											ret.Start = skipBlockStart + skipBlockLen;
+											ret.Size = result.Size;
 											ret.Status = MATCH;
 											return ret;
 										}
@@ -685,7 +722,7 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 				ret.Size = result.Size;
 				ret.Status = result.Status;
 			} else {
-				// Final result - match or state push limit expired
+				// No need to sync fields to ret as result already has everything to properly return
 				return result;
 			}
 		}

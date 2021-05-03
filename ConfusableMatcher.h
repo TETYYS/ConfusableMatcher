@@ -169,19 +169,6 @@ class ConfusableMatcher
 	static std::bitset<1114110> WordBoundaries;
 	static bool Initialized;
 
-	void Init();
-	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
-	void GetMappings(CMStringView Key, size_t KeyPos, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
-	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
-	CMReturn IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, size_t *StatePushes, const CMOptions Options);
-	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
-	int MatchWordBoundary(unsigned char i0);
-	int MatchWordBoundary(unsigned char i0, unsigned char i1);
-	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2);
-	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3);
-
-	public:
-
 	google::dense_hash_map<
 		char, // Key first char
 		std::vector<
@@ -196,13 +183,52 @@ class ConfusableMatcher
 	>
 		*TheMap;
 
+	void Init();
+	bool AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
+	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
+	void GetMappings(CMStringView Key, size_t KeyPos, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
+	bool AddSkip(std::string In);
+	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
+	CMReturn IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, size_t *StatePushes, const CMOptions Options);
 	size_t MatchWordBoundaryToRight(CMStringView In);
 	bool MatchWordBoundaryToLeft(CMStringView In);
-	bool AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
-	bool AddSkip(std::string In);
+	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
+	int MatchWordBoundary(unsigned char i0);
+	int MatchWordBoundary(unsigned char i0, unsigned char i1);
+	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2);
+	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3);
+
+	public:
+	/// <summary>
+	/// Initialize ConfusableMatcher
+	/// </summary>
+	/// <param name="InputMap">Input key -> value map</param>
+	/// <param name="Skip">Skipped strings</param>
+	/// <param name="AddDefaultValues">Add default values to key -> value map ([A-Z] -> [A-Z], [A-Z] -> [a-z], [0-9] -> [0-9])</param>
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);
+
+	/// <summary>
+	/// Searches for <paramref name="In" /> in <paramref name="Contains" />, using <paramref name="Options" /> and ConfusableMatcher instance
+	/// </summary>
+	/// <param name="In">Haystack</param>
+	/// <param name="Contains">Needle</param>
+	/// <param name="Options">Matching options</param>
+	/// <returns><see cref="CMReturn" /></returns>
 	CMReturn IndexOf(std::string In, std::string Contains, CMOptions Options);
+
+	/// <summary>
+	/// Gets values for specified <paramref name="In" /> in key -> value map
+	/// </summary>
+	/// <param name="In">Input</param>
+	/// <param name="Output">Output</param>
 	void GetKeyMappings(std::string In, StackVector<CMString> &Output);
+
+	/// <summary>
+	/// Precompute "Contains" parameter processing steps for later use, should be set in <see cref="CMOptions" /> for faster matching
+	/// </summary>
+	/// <param name="Contains">"Contains" string to be used in <see cref="IndexOf" /> call</param>
+	/// <remarks>Passing <see cref="CMStringPosPointers" /> that was computed for string other than that is passed in <see cref="IndexOf" /> call results in UB</remarks>
+	/// <returns>Opaque handle</returns>
 	CMStringPosPointers *ComputeStringPosPointers(std::string Contains);
 
 	~ConfusableMatcher();

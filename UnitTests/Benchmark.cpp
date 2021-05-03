@@ -410,40 +410,6 @@ public:
 	}
 };
 
-BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToRight, 1000, 100000)
-{
-	ASSERT(matcher->MatchWordBoundaryToRight("!"));
-	ASSERT(matcher->MatchWordBoundaryToRight("fsd!"));
-	ASSERT(matcher->MatchWordBoundaryToRight("¶"));
-	ASSERT(matcher->MatchWordBoundaryToRight("૰"));
-	ASSERT(matcher->MatchWordBoundaryToRight("𝠀"));
-	ASSERT(!matcher->MatchWordBoundaryToRight("𞋀"));
-	ASSERT(!matcher->MatchWordBoundaryToRight("!a"));
-	ASSERT(matcher->MatchWordBoundaryToRight("a!"));
-	ASSERT(matcher->MatchWordBoundaryToRight("G!a!"));
-	ASSERT(matcher->MatchWordBoundaryToRight("¶a!"));
-	ASSERT(!matcher->MatchWordBoundaryToRight("¶!a"));
-}
-
-BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToLeft, 1000, 100000)
-{
-	ASSERT(matcher->MatchWordBoundaryToLeft(" a"));
-	ASSERT(matcher->MatchWordBoundaryToLeft(" "));
-	ASSERT(matcher->MatchWordBoundaryToLeft("!fsd"));
-	ASSERT(matcher->MatchWordBoundaryToLeft("¶"));
-	ASSERT(matcher->MatchWordBoundaryToLeft("૰"));
-	ASSERT(matcher->MatchWordBoundaryToLeft("𝠀"));
-	ASSERT(!matcher->MatchWordBoundaryToLeft("𞋀"));
-	ASSERT(!matcher->MatchWordBoundaryToLeft("ꡪa"));
-	ASSERT(!matcher->MatchWordBoundaryToLeft("aꡪ"));
-	ASSERT(!matcher->MatchWordBoundaryToLeft("ꡪ"));
-	ASSERT(!matcher->MatchWordBoundaryToLeft("a!"));
-	ASSERT(matcher->MatchWordBoundaryToLeft("!a"));
-	ASSERT(matcher->MatchWordBoundaryToLeft("!a!G"));
-	ASSERT(matcher->MatchWordBoundaryToLeft("!a¶"));
-	ASSERT(!matcher->MatchWordBoundaryToLeft("a!¶"));
-}
-
 class PrecomputeLidlNormalizerTest : public::hayai::Fixture
 {
 public:
