@@ -60,6 +60,7 @@ int main()
 	s.push_back(CUTE(Test50));
 	s.push_back(CUTE(Test51));
 	s.push_back(CUTE(Test52));
+	s.push_back(CUTE(Test53));
 	cute::ide_listener<cute::null_listener> lis;
 	return !cute::makeRunner(lis)(s, "suite");
 }

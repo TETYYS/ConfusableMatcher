@@ -1,6 +1,8 @@
 LIBRARY outputname
 EXPORTS
-	FreeConfusableMatcher @1
-	GetKeyMappings @2
-	InitConfusableMatcher @3
-	StringIndexOf @4
+	ComputeStringPosPointers @1
+	FreeConfusableMatcher @2
+	FreeStringPosPointers @3
+	GetKeyMappings @4
+	InitConfusableMatcher @5
+	StringIndexOf @6

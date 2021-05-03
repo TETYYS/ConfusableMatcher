@@ -48,10 +48,14 @@ include_directories(RunBenchmark "UnitTests/hayai/src" ".")
 add_executable(RunBenchmark "UnitTests/Benchmark.cpp")
 target_link_libraries(RunBenchmark hayai_main ConfusableMatcherStatic)
 
+add_executable(RunFuzz "Fuzzing/Main.cpp")
+target_link_libraries(RunFuzz ConfusableMatcherStatic)
+
 target_compile_features(ConfusableMatcher PRIVATE cxx_std_17)
 target_compile_features(ConfusableMatcherStatic PRIVATE cxx_std_17)
 target_compile_features(RunUnitTests PRIVATE cxx_std_17)
 target_compile_features(RunBenchmark PRIVATE cxx_std_17)
+target_compile_features(RunFuzz PRIVATE cxx_std_17)
 
 if (NOT WIN32)
 	file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/sparsehash/build)

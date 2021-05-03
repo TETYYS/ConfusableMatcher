@@ -164,7 +164,7 @@ struct CMStringPosPointers
 class ConfusableMatcher
 {
 	private:
-	std::vector<CMString>* SkipSet[255];
+	std::vector<CMString>* SkipSet[256];
 	
 	static std::bitset<1114110> WordBoundaries;
 	static bool Initialized;

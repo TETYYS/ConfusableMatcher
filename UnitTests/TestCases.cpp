@@ -1301,3 +1301,16 @@ void Test52()
 	ASSERT_EQUAL(5, res.Start);
 	ASSERT_EQUAL(3, res.Size);
 }
+
+void Test53()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.StartIndex = 3;
+
+	auto matcher = ConfusableMatcher(map, { "\xff" });
+	
+}
