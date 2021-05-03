@@ -7,3 +7,6 @@
 [submodule "UnitTests/hayai"]
 	path = UnitTests/hayai
 	url = https://github.com/nickbruun/hayai.git
+[submodule "plf_stack"]
+	path = plf_stack
+	url = https://github.com/mattreecebentley/plf_stack.git

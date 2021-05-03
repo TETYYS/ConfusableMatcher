@@ -183,29 +183,29 @@ ConfusableMatcher *LidlNormalizerCMSetup()
 	return matcher;
 }
 
-std::vector<std::tuple<std::vector<std::string>, std::vector<int>>> LidlNormalizerData()
+std::vector<std::tuple<std::pair<std::string, std::string>, std::pair<int, int>>> LidlNormalizerData()
 {
 	return {
-		std::make_tuple(std::vector<std::string>({ "\U00000105", "A" }), std::vector<int>({ 0, 2 })),
-		std::make_tuple(std::vector<std::string>({ "\U0000ab31", "A" }), std::vector<int>({ 0, 3 })),
-		std::make_tuple(std::vector<std::string>({ "\U00001d43", "A" }), std::vector<int>({ 0, 3 })),
-		std::make_tuple(std::vector<std::string>({ "abc \U000000e5 def", "ABC A DEF" }), std::vector<int>({ 0, 10 })),
-		std::make_tuple(std::vector<std::string>({ "\U000002e2\U00001d50\U00001d52\U000002e1 \U0000207f\U00001d43\U00001d57\U00001da6\U00001d52\U0000207f", "SMOL NATION" }), std::vector<int>({ 0, 29 })),
-		std::make_tuple(std::vector<std::string>({ "\U0000041d\U00000438\U00000433", "NIG" }), std::vector<int>({ 0, 6 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001f1fa\U0001f1e6XD", "UAXD" }), std::vector<int>({ 0, 10 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001f193 ICE", "FREE ICE" }), std::vector<int>({ 0, 8 })),
-		std::make_tuple(std::vector<std::string>({ "chocolate \U0001F1F3\U0001F1EEb", "CHOCOLATE NIB" }), std::vector<int>({ 0, 19 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001f171lueberry", "BLUEBERRY" }), std::vector<int>({ 0, 12 })),
-		std::make_tuple(std::vector<std::string>({ "\U0000249d", "B" }), std::vector<int>({ 0, 3 })),
-		std::make_tuple(std::vector<std::string>({ "\U000000fc \U000000dc \U000000f6 \U000000d6 \U000000e4 \U000000c4", "U U O O A A" }), std::vector<int>({ 0, 17 })),
-		std::make_tuple(std::vector<std::string>({ "\U00001d2d", "AE" }), std::vector<int>({ 0, 3 })),
-		std::make_tuple(std::vector<std::string>({ "\U0000249c \U0000249d \U0000249e \U0000249f \U000024a0 \U000024a1 \U000024a2 \U000024a3 \U000024a4 \U000024a5 \U000024a6 \U000024a7 \U000024a8 \U000024a9 \U000024aa \U000024ab \U000024ac \U000024ad \U000024ae \U000024af \U000024b0 \U000024b1 \U000024b2 \U000024b3 \U000024b4", "A B C D E F G H I J K L M N O P Q R S T U V W X Y" }), std::vector<int>({ 0, 99 })),
-		std::make_tuple(std::vector<std::string>({ "\U000024cf\U000024d0\U000024d1\U000024d2\U000024d3\U000024d4\U000024d5\U000024d6\U000024d7\U000024d8\U000024d9\U000024da\U000024db\U000024dc\U000024dd\U000024de\U000024df\U000024e0\U000024e1\U000024e2\U000024e3\U000024e4\U000024e5\U000024e6\U000024e7\U000024e8\U000024e9\U000024ea", "ZABCDEFGHIJKLMNOPQRSTUVWXYZ0" }), std::vector<int>({ 0, 84 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001d552\U0001d553\U0001d554\U0001d555\U0001d556\U0001d557\U0001d558\U0001d559\U0001d55a\U0001d55b\U0001d55c\U0001d55d\U0001d55e\U0001d55f\U0001d560\U0001d561\U0001d562\U0001d563\U0001d564\U0001d565\U0001d566\U0001d567\U0001d568\U0001d569\U0001d56a\U0001d56b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector<int>({ 0, 104 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001f130\U0001f131\U0001f132\U0001f133\U0001f134\U0001f135\U0001f136\U0001f137\U0001f138\U0001f139\U0001f13a\U0001f13b\U0001f13c\U0001f13d\U0001f13e\U0001f13f\U0001f140\U0001f141\U0001f142\U0001f143\U0001f144\U0001f145\U0001f146\U0001f147\U0001f148\U0001f149", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector<int>({ 0, 104 })),
-		std::make_tuple(std::vector<std::string>({ "\U000020b3\U00000e3f\U000020b5\U00000110\U00000246\U000020a3\U000020b2\U00002c67\U00000142J\U000020ad\U00002c60\U000020a5\U000020a6\U000000d8\U000020b1Q\U00002c64\U000020b4\U000020ae\U00000244V\U000020a9\U000004fe\U0000024e\U00002c6b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector<int>({ 0, 65 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001d586\U0001d587\U0001d588\U0001d589\U0001d58a\U0001d58b\U0001d58c\U0001d58d\U0001d58e\U0001d58f\U0001d590\U0001d591\U0001d592\U0001d593\U0001d594\U0001d595\U0001d596\U0001d597\U0001d598\U0001d599\U0001d59a\U0001d59b\U0001d59c\U0001d59d\U0001d59e\U0001d59f", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector<int>({ 0, 104 })),
-		std::make_tuple(std::vector<std::string>({ "\U0001f170\U0001f171\U0001f172\U0001f173\U0001f174\U0001f175\U0001f176\U0001f177\U0001f178\U0001f179\U0001f17a\U0001f17b\U0001f17c\U0001f17d\U0001f17e\U0001f17f\U0001f180\U0001f181\U0001f182\U0001f183\U0001f184\U0001f185\U0001f186\U0001f187\U0001f188\U0001f189", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }), std::vector<int>({ 0, 104 }))
+		std::make_tuple(std::pair<std::string, std::string>("\U00000105", "A"), std::pair<int, int>(0, 2)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0000ab31", "A"), std::pair<int, int>(0, 3)),
+		std::make_tuple(std::pair<std::string, std::string>("\U00001d43", "A"), std::pair<int, int>(0, 3)),
+		std::make_tuple(std::pair<std::string, std::string>("abc \U000000e5 def", "ABC A DEF"), std::pair<int, int>(0, 10)),
+		std::make_tuple(std::pair<std::string, std::string>("\U000002e2\U00001d50\U00001d52\U000002e1 \U0000207f\U00001d43\U00001d57\U00001da6\U00001d52\U0000207f", "SMOL NATION"), std::pair<int, int>(0, 29)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0000041d\U00000438\U00000433", "NIG"), std::pair<int, int>(0, 6)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001f1fa\U0001f1e6XD", "UAXD"), std::pair<int, int>(0, 10)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001f193 ICE", "FREE ICE"), std::pair<int, int>(0, 8)),
+		std::make_tuple(std::pair<std::string, std::string>("chocolate \U0001F1F3\U0001F1EEb", "CHOCOLATE NIB"), std::pair<int, int>(0, 19)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001f171lueberry", "BLUEBERRY"), std::pair<int, int>(0, 12)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0000249d", "B"), std::pair<int, int>(0, 3)),
+		std::make_tuple(std::pair<std::string, std::string>("\U000000fc \U000000dc \U000000f6 \U000000d6 \U000000e4 \U000000c4", "U U O O A A"), std::pair<int, int>(0, 17)),
+		std::make_tuple(std::pair<std::string, std::string>("\U00001d2d", "AE"), std::pair<int, int>(0, 3)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0000249c \U0000249d \U0000249e \U0000249f \U000024a0 \U000024a1 \U000024a2 \U000024a3 \U000024a4 \U000024a5 \U000024a6 \U000024a7 \U000024a8 \U000024a9 \U000024aa \U000024ab \U000024ac \U000024ad \U000024ae \U000024af \U000024b0 \U000024b1 \U000024b2 \U000024b3 \U000024b4", "A B C D E F G H I J K L M N O P Q R S T U V W X Y"), std::pair<int, int>(0, 99)),
+		std::make_tuple(std::pair<std::string, std::string>("\U000024cf\U000024d0\U000024d1\U000024d2\U000024d3\U000024d4\U000024d5\U000024d6\U000024d7\U000024d8\U000024d9\U000024da\U000024db\U000024dc\U000024dd\U000024de\U000024df\U000024e0\U000024e1\U000024e2\U000024e3\U000024e4\U000024e5\U000024e6\U000024e7\U000024e8\U000024e9\U000024ea", "ZABCDEFGHIJKLMNOPQRSTUVWXYZ0"), std::pair<int, int>(0, 84)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001d552\U0001d553\U0001d554\U0001d555\U0001d556\U0001d557\U0001d558\U0001d559\U0001d55a\U0001d55b\U0001d55c\U0001d55d\U0001d55e\U0001d55f\U0001d560\U0001d561\U0001d562\U0001d563\U0001d564\U0001d565\U0001d566\U0001d567\U0001d568\U0001d569\U0001d56a\U0001d56b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), std::pair<int, int>(0, 104)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001f130\U0001f131\U0001f132\U0001f133\U0001f134\U0001f135\U0001f136\U0001f137\U0001f138\U0001f139\U0001f13a\U0001f13b\U0001f13c\U0001f13d\U0001f13e\U0001f13f\U0001f140\U0001f141\U0001f142\U0001f143\U0001f144\U0001f145\U0001f146\U0001f147\U0001f148\U0001f149", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), std::pair<int, int>(0, 104)),
+		std::make_tuple(std::pair<std::string, std::string>("\U000020b3\U00000e3f\U000020b5\U00000110\U00000246\U000020a3\U000020b2\U00002c67\U00000142J\U000020ad\U00002c60\U000020a5\U000020a6\U000000d8\U000020b1Q\U00002c64\U000020b4\U000020ae\U00000244V\U000020a9\U000004fe\U0000024e\U00002c6b", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), std::pair<int, int>(0, 65)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001d586\U0001d587\U0001d588\U0001d589\U0001d58a\U0001d58b\U0001d58c\U0001d58d\U0001d58e\U0001d58f\U0001d590\U0001d591\U0001d592\U0001d593\U0001d594\U0001d595\U0001d596\U0001d597\U0001d598\U0001d599\U0001d59a\U0001d59b\U0001d59c\U0001d59d\U0001d59e\U0001d59f", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), std::pair<int, int>(0, 104)),
+		std::make_tuple(std::pair<std::string, std::string>("\U0001f170\U0001f171\U0001f172\U0001f173\U0001f174\U0001f175\U0001f176\U0001f177\U0001f178\U0001f179\U0001f17a\U0001f17b\U0001f17c\U0001f17d\U0001f17e\U0001f17f\U0001f180\U0001f181\U0001f182\U0001f183\U0001f184\U0001f185\U0001f186\U0001f187\U0001f188\U0001f189", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), std::pair<int, int>(0, 104))
 	};
 }
 
@@ -225,11 +225,11 @@ void LidlNormalizerTests()
 	auto opts = LidlNormalizerOpts();
 
 	for (auto entry : data) {
-		std::vector<std::string> chr;
-		std::vector<int> eq;
+		std::pair<std::string, std::string> chr;
+		std::pair<int, int> eq;
 		std::tie(chr, eq) = entry;
-		auto res = matcher->IndexOf(chr[0], chr[1], opts);
-		AssertMatch(res, eq[0], eq[1]);
+		auto res = matcher->IndexOf(chr.first, chr.second, opts);
+		AssertMatch(res, eq.first, eq.second);
 	}
 
 	delete matcher;
@@ -543,15 +543,15 @@ void Test20()
 
 	StackVector<CMString> output;
 	matcher.GetKeyMappings("A", output);
-	ASSERT_EQUAL("1", output.Stack[0].View());
+	ASSERT_EQUAL("1", output.GetElement(0).View());
 
 	output.Reset();
 	matcher.GetKeyMappings("B", output);
-	ASSERT_EQUAL("1", output.Stack[0].View());
+	ASSERT_EQUAL("1", output.GetElement(0).View());
 
 	output.Reset();
 	matcher.GetKeyMappings("C", output);
-	ASSERT_EQUAL("1", output.Stack[0].View());
+	ASSERT_EQUAL("1", output.GetElement(0).View());
 }
 
 void Test21()
@@ -568,13 +568,13 @@ void Test21()
 	output.Reset();
 	matcher.GetKeyMappings("1", output);
 
-	ASSERT(output.Stack[0].View() == "AB" || output.Stack[0].View() == "CD");
-	ASSERT(output.Stack[1].View() == "AB" || output.Stack[1].View() == "CD");
+	ASSERT(output.GetElement(0).View() == "AB" || output.GetElement(0).View() == "CD");
+	ASSERT(output.GetElement(1).View() == "AB" || output.GetElement(1).View() == "CD");
 
 	output.Reset();
 	matcher.GetKeyMappings("2", output);
 
-	ASSERT_EQUAL("EEE", output.Stack[0].View());
+	ASSERT_EQUAL("EEE", output.GetElement(0).View());
 }
 
 void Test22()
@@ -587,6 +587,16 @@ void Test22()
 
 	StackVector<CMString> output;
 	matcher.GetKeyMappings("123", output);
+
+	std::bitset<500> accountedFor;
+
+	for (auto x = 0;x < 500;x++) {
+		accountedFor[std::atoi(output.GetElement(x).Str)] = true;
+	}
+
+	for (auto x = 0;x < 500;x++) {
+		ASSERT(accountedFor[x]);
+	}
 
 	ASSERT_EQUAL(500, output.Size());
 }
@@ -1118,4 +1128,43 @@ void Test47()
 	ASSERT(matcher.MatchWordBoundaryToLeft("!a!G"));
 	ASSERT(matcher.MatchWordBoundaryToLeft("!a¶"));
 	ASSERT(!matcher.MatchWordBoundaryToLeft("a!¶"));
+}
+
+void Test48()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair<std::string, std::string>("T", "7"));
+	map.push_back(std::pair<std::string, std::string>("H", "|-|"));
+	map.push_back(std::pair<std::string, std::string>("H", "н"));
+	map.push_back(std::pair<std::string, std::string>("I", "1"));
+	map.push_back(std::pair<std::string, std::string>("I", "|"));
+	map.push_back(std::pair<std::string, std::string>("N", "и"));
+	map.push_back(std::pair<std::string, std::string>("N", "/\\/"));
+	map.push_back(std::pair<std::string, std::string>("N", "/v"));
+	map.push_back(std::pair<std::string, std::string>("N", "/V"));
+	map.push_back(std::pair<std::string, std::string>("G", "6"));
+	map.push_back(std::pair<std::string, std::string>("THI", "$"));
+
+	CMOptions opts = { };
+	opts.StatePushLimit = 50000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+
+	auto matcher = ConfusableMatcher(map, { });
+
+	auto in = "THING";
+
+	opts.ContainsPosPointers = matcher.ComputeStringPosPointers(in);
+
+	auto res = matcher.IndexOf("THERE IS NO SUCH THING", in, opts);
+	AssertMatch(res, 17, 5);
+
+	res = matcher.IndexOf("THERE IS NO SUCH T|-|ING", in, opts);
+	AssertMatch(res, 17, 7);
+
+	res = matcher.IndexOf("THERE IS NO SUCH 7н|/V6", in, opts);
+	AssertMatch(res, 17, 7);
+
+	res = matcher.IndexOf("THERE IS NO SUCH $/V6", in, opts);
+	AssertMatch(res, 17, 4);
 }

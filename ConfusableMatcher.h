@@ -23,12 +23,6 @@
 	#endif
 #endif
 
-#ifdef WIN32
-	#define HASHCOMPARE_CLS stdext::hash_compare
-#else
-	#define HASHCOMPARE_CLS std::hash
-#endif
-
 namespace google
 {
 	template<class T>
@@ -43,16 +37,20 @@ struct MatchingState
 	CMStringView In;
 	CMStringView Contains;
 	int StartingIndex;
-	int MatchedChars;
+	int MatchedInChars;
+	int MatchedContainsChars;
 	CMStringView LastMatched;
+	int LastMatchedContainsPos;
 
-	MatchingState(CMStringView In, CMStringView Contains, int StartingIndex, int MatchedChars, CMStringView LastMatched)
+	MatchingState(CMStringView In, CMStringView Contains, int StartingIndex, int MatchedInChars, int MatchedContainsChars, CMStringView LastMatched, int LastMatchedContainsPos)
 	{
 		this->In = In;
 		this->Contains = Contains;
 		this->StartingIndex = StartingIndex;
-		this->MatchedChars = MatchedChars;
+		this->MatchedInChars = MatchedInChars;
+		this->MatchedContainsChars = MatchedContainsChars;
 		this->LastMatched = LastMatched;
+		this->LastMatchedContainsPos = LastMatchedContainsPos;
 	}
 };
 
@@ -60,45 +58,46 @@ constexpr int STACKVECTOR_SIZE = 64;
 template<class T>
 struct StackVector
 {
+private:
 	int CurSize = 0;
-	bool IsStack = true;
-
-public:
 	T Stack[STACKVECTOR_SIZE];
 	std::vector<T> Heap;
 
+public:
+	StackVector() { }
+
+	inline T GetElement(size_t Pos)
+	{
+		return Pos < STACKVECTOR_SIZE ? Stack[Pos] : Heap[Pos - STACKVECTOR_SIZE];
+	}
+
 	void Push(T In)
 	{
-		if (IsStack) {
-			if (CurSize + 1 > STACKVECTOR_SIZE) {
-				IsStack = false;
-				Heap = std::vector<T>(&Stack[0], &Stack[STACKVECTOR_SIZE]);
-				CurSize = 0;
-			} else {
-				Stack[CurSize++] = In;
-				return;
-			}
+		if (CurSize + 1 > STACKVECTOR_SIZE) {
+			Heap.push_back(In);
+			CurSize++;
+		} else {
+			Stack[CurSize++] = In;
 		}
-		Heap.push_back(In);
 	}
 
 	void Reset()
 	{
-		if (IsStack)
-			CurSize = 0;
-		else
+		if (CurSize > STACKVECTOR_SIZE)
 			Heap.clear();
+		CurSize = 0;
 	}
 
-	size_t Size()
+	inline size_t Size()
 	{
-		return IsStack ? CurSize : Heap.size();
+		return CurSize;
 	}
 };
 
 struct CMString {
 	char *Str;
 	size_t Len;
+	size_t Hash;
 
 public:
 	CMString()
@@ -109,6 +108,13 @@ public:
 	{
 		Str = str;
 		Len = len;
+
+		Hash = 14695981039346656037u;
+		for (auto x = 0;x < Len;x++)
+		{
+			Hash ^= Str[x];
+			Hash *= 1099511628211u;
+		}
 	}
 
 	static CMString CopyFromString(std::string In)
@@ -120,7 +126,7 @@ public:
 		return CMString(value, len);
 	}
 
-	CMStringView View()
+	inline CMStringView View() const
 	{
 		return CMStringView(Str, Len);
 	}
@@ -131,46 +137,49 @@ public:
 	}
 };
 
-class ConfusableMatcher
+struct eqstr
+{
+	bool operator()(CMString s1, CMString s2) const
+	{
+		return s1.Len == s2.Len && strncmp(s1.Str, s2.Str, s1.Len) == 0;
+	}
+};
+
+struct hashstr
+{
+	size_t operator()(const CMString In) const
+	{
+		return In.Hash;
+	}
+};
+
+typedef google::dense_hash_map<
+	char, // Value first char
+	std::vector<CMString>*, // Values whole
+	std::hash<char>,
+	std::equal_to<char>,
+	google::libc_allocator_with_realloc<std::pair<const char, std::vector<CMString>*>>
+> CMInnerHashMap;
+
+struct CMStringPosPointers
 {
 	private:
 
-	typedef google::dense_hash_map<
-		char, // Value first char
-		std::vector<CMString>*, // Values whole
-		HASHCOMPARE_CLS<char>,
-		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, std::vector<CMString>*>>
-	> CMInnerHashMap;
+	public:
+	std::vector<std::vector<std::pair<size_t /* Key len */, const CMInnerHashMap*>>> PosPointers;
+};
 
-	google::dense_hash_map<
-		char, // Key first char
-		std::vector<
-			std::pair<
-				CMString, // Key whole
-				CMInnerHashMap*
-			>*
-		>*,
-		HASHCOMPARE_CLS<char>,
-		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::pair<CMString, CMInnerHashMap*>*>*>>
-	>
-		*TheMap;
-
-	google::dense_hash_map<
-		char,
-		std::vector<CMString>*,
-		HASHCOMPARE_CLS<char>,
-		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, std::vector<CMString>*>>
-	>
-		*SkipSet;
+class ConfusableMatcher
+{
+	private:
+	std::vector<CMString>* SkipSet[255];
 	
 	static std::bitset<1114110> WordBoundaries;
 	static bool Initialized;
 
 	void Init();
-	void GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage);
+	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, StackVector<std::pair<size_t, size_t>> &Storage);
+	void GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<size_t, size_t>> &Storage);
 	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
 	CMReturn IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options);
 	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
@@ -180,6 +189,21 @@ class ConfusableMatcher
 	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3);
 
 	public:
+
+	google::dense_hash_map<
+		char, // Key first char
+		std::vector<
+			std::pair<
+				CMString, // Key whole
+				CMInnerHashMap*
+			>*
+		>*,
+		std::hash<char>,
+		std::equal_to<char>,
+		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::pair<CMString, CMInnerHashMap*>*>*>>
+	>
+		*TheMap;
+
 	size_t MatchWordBoundaryToRight(CMStringView In);
 	bool MatchWordBoundaryToLeft(CMStringView In);
 	bool AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
@@ -187,6 +211,7 @@ class ConfusableMatcher
 	ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues = true);
 	CMReturn IndexOf(std::string In, std::string Contains, CMOptions Options);
 	void GetKeyMappings(std::string In, StackVector<CMString> &Output);
+	CMStringPosPointers *ComputeStringPosPointers(std::string Contains);
 
 	~ConfusableMatcher();
 };

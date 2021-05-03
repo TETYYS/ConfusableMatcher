@@ -350,7 +350,7 @@ public:
 	}
 };
 
-BENCHMARK_F(JsTest, IndexOf, 1000, 10000)
+BENCHMARK_F(JsTest, IndexOf, 500, 10000)
 {
 	cm->IndexOf("SIMP", "SIMP", opts);
 }
@@ -360,7 +360,7 @@ class LidlNormalizerTest : public::hayai::Fixture
 public:
 	ConfusableMatcher *matcher;
 	CMOptions opts;
-	std::vector<std::tuple<std::vector<std::string>, std::vector<int>>> data;
+	std::vector<std::tuple<std::pair<std::string, std::string>, std::pair<int, int>>> data;
 
 	virtual void SetUp()
 	{
@@ -371,17 +371,18 @@ public:
 
 	virtual void TearDown()
 	{
+		delete matcher;
 	}
 };
 
-BENCHMARK_F(LidlNormalizerTest, IndexOf, 30, 10000)
+BENCHMARK_F(LidlNormalizerTest, IndexOf, 10, 10000)
 {
 	for (auto entry : data) {
-		std::vector<std::string> chr;
-		std::vector<int> eq;
+		std::pair<std::string, std::string> chr;
+		std::pair<int, int> eq;
 		std::tie(chr, eq) = entry;
-		auto res = matcher->IndexOf(chr[0], chr[1], opts);
-		AssertMatch(res, eq[0], eq[1]);
+		auto res = matcher->IndexOf(chr.first, chr.second, opts);
+		AssertMatch(res, eq.first, eq.second);
 	}
 }
 
@@ -405,10 +406,11 @@ public:
 
 	virtual void TearDown()
 	{
+		delete matcher;
 	}
 };
 
-BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToRight, 10000, 100000)
+BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToRight, 1000, 100000)
 {
 	ASSERT(matcher->MatchWordBoundaryToRight("!"));
 	ASSERT(matcher->MatchWordBoundaryToRight("fsd!"));
@@ -423,7 +425,7 @@ BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToRight, 10000, 100000)
 	ASSERT(!matcher->MatchWordBoundaryToRight("¶!a"));
 }
 
-BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToLeft, 10000, 100000)
+BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToLeft, 1000, 100000)
 {
 	ASSERT(matcher->MatchWordBoundaryToLeft(" a"));
 	ASSERT(matcher->MatchWordBoundaryToLeft(" "));
@@ -440,4 +442,107 @@ BENCHMARK_F(WordBoundaryTest, MatchWordBoundaryToLeft, 10000, 100000)
 	ASSERT(matcher->MatchWordBoundaryToLeft("!a!G"));
 	ASSERT(matcher->MatchWordBoundaryToLeft("!a¶"));
 	ASSERT(!matcher->MatchWordBoundaryToLeft("a!¶"));
+}
+
+class PrecomputeLidlNormalizerTest : public::hayai::Fixture
+{
+public:
+	ConfusableMatcher *matcher;
+	std::vector<std::tuple<std::pair<std::string, std::string>, std::pair<int, int>>> data;
+	std::vector<CMOptions> opts;
+
+	virtual void SetUp()
+	{
+		matcher = LidlNormalizerCMSetup();
+		data = LidlNormalizerData();
+
+		for (auto entry : data) {
+			std::pair<std::string, std::string> chr;
+			std::pair<int, int> eq;
+			std::tie(chr, eq) = entry;
+
+			auto opt = LidlNormalizerOpts();
+			opt.ContainsPosPointers = matcher->ComputeStringPosPointers(chr.second);
+			opts.push_back(opt);
+		}
+	}
+
+	virtual void TearDown()
+	{
+		delete matcher;
+	}
+};
+
+BENCHMARK_F(PrecomputeLidlNormalizerTest, IndexOf, 10, 10000)
+{
+	for (auto x = 0;x < data.size();x++) {
+		std::pair<std::string, std::string> chr;
+		std::pair<int, int> eq;
+		std::tie(chr, eq) = data[x];
+		auto res = matcher->IndexOf(chr.first, chr.second, opts[x]);
+		AssertMatch(res, eq.first, eq.second);
+	}
+}
+
+
+class PrecomputeRealWorld : public::hayai::Fixture
+{
+public:
+	ConfusableMatcher *matcher;
+	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
+	CMOptions opts;
+
+	virtual void SetUp()
+	{
+		auto map = GetDefaultMap();
+
+		opts = { };
+		opts.StatePushLimit = 50000;
+		opts.MatchRepeating = true;
+		matcher = new ConfusableMatcher(map, { "_", "%", "$" });
+		opts.ContainsPosPointers = matcher->ComputeStringPosPointers("NIGGER");
+	}
+
+	virtual void TearDown()
+	{
+		delete matcher;
+	}
+};
+
+
+BENCHMARK_F(PrecomputeRealWorld, IndexOf, 1, 1000000)
+{
+	auto res = matcher->IndexOf(in, "NIGGER", opts);
+
+	AssertMatchMulti(res, { 64, 89 }, { 57, 32 });
+}
+
+class RealWorld : public::hayai::Fixture
+{
+public:
+	ConfusableMatcher *matcher;
+	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
+	CMOptions opts;
+
+	virtual void SetUp()
+	{
+		auto map = GetDefaultMap();
+
+		opts = { };
+		opts.StatePushLimit = 50000;
+		opts.MatchRepeating = true;
+		matcher = new ConfusableMatcher(map, { "_", "%", "$" });
+	}
+
+	virtual void TearDown()
+	{
+		delete matcher;
+	}
+};
+
+BENCHMARK_F(RealWorld, IndexOf, 1, 1000000)
+{
+	auto res = matcher->IndexOf(in, "NIGGER", opts);
+
+	AssertMatchMulti(res, { 64, 89 }, { 57, 32 });
 }

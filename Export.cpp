@@ -38,7 +38,7 @@ CMReturn StringIndexOf(CMHandle CM, char *In, char *Contains, CMOptions Options)
 
 uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t OutputSize)
 {
-	auto cm = ((ConfusableMatcher*)CM);
+	auto cm = (ConfusableMatcher*)CM;
 
 	StackVector<CMString> output;
 	cm->GetKeyMappings(In, output);
@@ -48,15 +48,21 @@ uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t Out
 	if (OutputSize < outputSize)
 		return outputSize;
 
-	if (output.IsStack) {
-		for (auto x = 0;x < output.CurSize;x++) {
-			Output[x] = output.Stack[x].Str;
-		}
-	} else {
-		for (auto x = 0;x < output.Heap.size();x++) {
-			Output[x] = output.Heap[x].Str;
-		}
+	for (auto x = 0;x < output.Size();x++) {
+		Output[x] = output.GetElement(x).Str;
 	}
 
 	return outputSize;
+}
+
+CMComputedStringPosPointersHandle ComputeStringPosPointers(CMHandle CM, char *Contains)
+{
+	auto cm = (ConfusableMatcher*)CM;
+
+	return cm->ComputeStringPosPointers(std::string(Contains));
+}
+
+void FreeStringPosPointers(CMComputedStringPosPointersHandle StringPosPointers)
+{
+	delete (CMStringPosPointers*)StringPosPointers;
 }

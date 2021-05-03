@@ -28,6 +28,7 @@ extern "C" {
 #endif
 	typedef void *CMHandle;
 	typedef void *CMListHandle;
+	typedef void *CMComputedStringPosPointersHandle;
 
 	typedef struct _CMKV
 	{
@@ -47,6 +48,8 @@ extern "C" {
 	EXPORTED void __cdecl FreeConfusableMatcher(CMHandle In);
 	EXPORTED CMReturn __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, CMOptions Options);
 	EXPORTED uint32_t __cdecl GetKeyMappings(CMHandle CM, char* In, const char** Output, uint32_t OutputSize);
+	EXPORTED CMComputedStringPosPointersHandle __cdecl ComputeStringPosPointers(CMHandle CM, char *Contains);
+	EXPORTED void __cdecl FreeStringPosPointers(CMComputedStringPosPointersHandle StringPosPointers);
 #ifdef __cplusplus
 }
 #endif

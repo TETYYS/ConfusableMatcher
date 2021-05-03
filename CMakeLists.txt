@@ -19,6 +19,8 @@ check_include_file_cxx(experimental/string_view HAVE_EXPERIMENTAL_STRING_VIEW)
 
 configure_file(${PROJECT_SOURCE_DIR}/Config.h.in ${PROJECT_SOURCE_DIR}/Config.h)
 
+include_directories(ConfusableMatcherStatic "plf_stack")
+include_directories(ConfusableMatcher "plf_stack")
 include_directories(ConfusableMatcher "sparsehash/build/src")
 include_directories(ConfusableMatcher "sparsehash/src")
 if (WIN32)

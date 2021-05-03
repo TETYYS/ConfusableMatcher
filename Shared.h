@@ -9,6 +9,7 @@ typedef struct _CMOptions
 	bool StartFromEnd;
 	uint64_t StatePushLimit;
 	bool MatchOnWordBoundary;
+	void *ContainsPosPointers;
 } CMOptions;
 
 typedef enum _CM_RETURN_STATUS

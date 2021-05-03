@@ -2,7 +2,7 @@
 #include <chrono>
 #include <stack>
 #include <stdexcept>
-
+#include <plf_stack.h>
 #include <sparsehash/dense_hash_map>
 using google::dense_hash_map;
 #include "ConfusableMatcher.h"
@@ -24,10 +24,7 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 	std::vector<
 		std::pair<
 			CMString, // Key whole
-			google::dense_hash_map<
-				char, // Value first char
-				std::vector<CMString>* // Values whole
-			>*
+			CMInnerHashMap*
 		>*
 	>* keyArr;
 
@@ -38,20 +35,14 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 		keyArr = new std::vector<
 			std::pair<
 				CMString, // Key whole
-				google::dense_hash_map<
-					char, // Value first char
-					std::vector<CMString>* // Values whole
-				>*
+				CMInnerHashMap*
 			>*
 		>;
 		(*TheMap)[Key[0]] = keyArr;
 	} else
 		keyArr = findKeyArr->second;
 
-	google::dense_hash_map<
-		char, // Value first char
-		std::vector<CMString>* // Values whole
-	> *valDict = nullptr;
+	CMInnerHashMap *valDict = nullptr;
 
 	for (auto it = keyArr->begin();it != keyArr->end();it++) {
 		if ((*it)->first.View() == Key) {
@@ -62,16 +53,13 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 
 	if (valDict == nullptr) {
 		// Value dictionary doesn't exist
-		valDict = new google::dense_hash_map<
-			char, // Value first char
-			std::vector<CMString>* // Values whole
-		>;
+		valDict = new CMInnerHashMap;
 		valDict->set_empty_key('\x0');
 		valDict->set_deleted_key('\x1');
 
 		auto key = CMString::CopyFromString(Key);
 
-		keyArr->push_back(new std::pair<CMString, google::dense_hash_map<char, std::vector<CMString>*>*>(key, valDict));
+		keyArr->push_back(new std::pair<CMString, CMInnerHashMap*>(key, valDict));
 	}
 
 	std::vector<CMString> *valArr;
@@ -101,23 +89,19 @@ bool ConfusableMatcher::AddSkip(std::string In)
 {
 	auto in = CMString::CopyFromString(In);
 
-	auto found = SkipSet->find(In[0]);
-	if (found != SkipSet->end()) {
-		for (auto it = found->second->begin();it != found->second->end();it++) {
-			if ((*it).View() == In) {
-				return false;
-			}
-		}
+	auto found = SkipSet[(unsigned char)In[0]];
 
-		found->second->push_back(in);
-		return true;
+	if (found == nullptr) {
+		SkipSet[(unsigned char)In[0]] = found = new std::vector<CMString>();
 	}
 
-	auto newVec = new std::vector<CMString>();
-	newVec->push_back(in);
+	for (auto it = found->begin();it != found->end();it++) {
+		if ((*it).View() == In) {
+			return false;
+		}
+	}
 
-	(*SkipSet)[In[0]] = newVec;
-
+	found->push_back(in);
 	return true;
 }
 
@@ -137,7 +121,7 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 				CMInnerHashMap*
 			>*
 		>*,
-		HASHCOMPARE_CLS<char>,
+		std::hash<char>,
 		std::equal_to<char>,
 		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::pair<CMString, CMInnerHashMap*>*>*>>
 	>;
@@ -157,15 +141,9 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 	for (auto it = InputMap.begin();it != InputMap.end();it++)
 		AddMapping(it->first, it->second, true);
 
-	SkipSet = new google::dense_hash_map<
-		char,
-		std::vector<CMString>*,
-		HASHCOMPARE_CLS<char>,
-		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, std::vector<CMString>*>>
-	>;
-	SkipSet->set_empty_key(U'\x0');
-	SkipSet->set_deleted_key(U'\x1');
+	for (auto x = 0;x < std::extent<decltype(SkipSet)>::value;x++) {
+		SkipSet[x] = nullptr;
+	}
 
 	for (auto it = Skip.begin();it != Skip.end();it++)
 		AddSkip(*it);
@@ -198,7 +176,58 @@ void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Ou
 	}
 }
 
-void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<CMStringView, CMStringView>> &Storage)
+CMStringPosPointers *ConfusableMatcher::ComputeStringPosPointers(std::string Contains)
+{
+	auto ret = new CMStringPosPointers();
+
+	for (auto x = 0;x < Contains.size();x++) {
+		std::vector<std::pair<size_t /* Key len */, const CMInnerHashMap*>> vec;
+
+		auto keyArr = TheMap->find(Contains[x]);
+		if (keyArr != TheMap->end()) {
+			for (auto keyIterator = keyArr->second->begin();keyIterator != keyArr->second->end();keyIterator++) {
+				if ((*keyIterator)->first.Len > Contains.size() - x || ((*keyIterator)->first).View() != CMStringView(Contains.data() + x, (*keyIterator)->first.Len))
+					continue;
+
+				vec.push_back(std::pair<size_t, const CMInnerHashMap*>((*keyIterator)->first.Len, (*keyIterator)->second));
+			}
+		}
+
+		ret->PosPointers.push_back(vec);
+	}
+
+	return ret;
+}
+
+void ConfusableMatcher::GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, StackVector<std::pair<size_t, size_t>> &Storage)
+{
+	assert(Value.size() >= 1);
+
+	const auto& vals = PosPointers->PosPointers[Pos];
+
+	for (auto x = 0;x < vals.size();x++) {
+		const auto inner = vals[x];
+		if (ExactSize != -1 && inner.first != ExactSize)
+			continue;
+
+		auto foundArr = inner.second->find(Value[0]);
+		if (foundArr == inner.second->end())
+			continue;
+
+		const auto& vec = *(foundArr->second);
+		auto sz = vec.size();
+
+		for (auto x = 0;x < sz;x++) {
+			auto el = vec[x];
+			if (el.Len <= Value.size() && el.View() == CMStringView(Value.data(), el.Len))
+				Storage.Push(std::pair<size_t, size_t>(inner.first, el.Len));
+		}
+	}
+
+	return;
+}
+
+void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackVector<std::pair<size_t, size_t>> &Storage)
 {
 	assert(Key.size() >= 1);
 	assert(Value.size() >= 1);
@@ -217,7 +246,7 @@ void ConfusableMatcher::GetMappings(CMStringView Key, CMStringView Value, StackV
 
 			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();it2++) {
 				if (it2->Len <= Value.size() && (*it2).View() == CMStringView(Value.data(), it2->Len))
-					Storage.Push(std::pair<CMStringView, CMStringView>(((*it)->first).View(), (*it2).View())); // Whole value found
+					Storage.Push(std::pair<size_t, size_t>(((*it)->first).Len, (*it2).Len)); // Whole value found
 			}
 		}
 	}
@@ -263,7 +292,7 @@ bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
 	if (In.size() == 0)
 		return false;
 
-#define process(i) if (i == 1) return true; else if (i == 0) return false;
+#define process(i) if ((i) == 1) { return true; } else if ((i) == 0) { return false; }
 
 	if (In.size() == 4) {
 		process(MatchWordBoundary(In[0], In[1], In[2], In[3]));
@@ -290,7 +319,7 @@ size_t ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 	if (In.size() == 0)
 		return false;
 
-#define process(i, x) if (i == 1) return x; else if (i == 0) return MatchWordBoundaryToRight(CMStringView(In.data() + x, In.size() - x));
+#define process(i, x) if ((i) == 1) return (x); else if ((i) == 0) { return MatchWordBoundaryToRight(CMStringView(In.data() + x, In.size() - x)); }
 
 	if (In.size() == 4) {
 		process(MatchWordBoundary(In[0], In[1], In[2], In[3]), 4);
@@ -349,8 +378,8 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 
 CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingState State, size_t *StatePushes, const CMOptions Options)
 {
-	std::stack<MatchingState> matchingStates;
-	StackVector<std::pair<CMStringView, CMStringView>> mappingsStorage;
+	plf::stack<MatchingState> matchingStates;
+	StackVector<std::pair<size_t, size_t>> mappingsStorage;
 	CMReturn ret;
 	ret.Start = State.StartingIndex;
 	ret.Status = NO_MATCH;
@@ -359,11 +388,11 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingStat
 	{
 		if (State.Contains.size() == 0) {
 			if (Options.MatchOnWordBoundary) {
-				ret.Status = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedChars));
+				ret.Status = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, State.MatchedInChars));
 			} else
 				ret.Status = MATCH;
 
-			ret.Size = State.MatchedChars;
+			ret.Size = State.MatchedInChars;
 		}
 
 		return ret;
@@ -385,52 +414,61 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingStat
 		if (Options.MatchRepeating) {
 			// Try to match repeating substring
 			mappingsStorage.Reset();
-			GetMappings(State.LastMatched, State.In, mappingsStorage);
+			if (Options.ContainsPosPointers == nullptr)
+				GetMappings(State.LastMatched, State.In, mappingsStorage);
+			else
+				GetMappings((CMStringPosPointers*)Options.ContainsPosPointers, (size_t)State.LastMatchedContainsPos, State.LastMatched.size(), State.In, mappingsStorage);
 			auto mappingsSize = mappingsStorage.Size();
 
 			if (mappingsSize != 0) {
 				*StatePushes += mappingsSize;
 				if (*StatePushes > Options.StatePushLimit) {
-					ret.Size = State.MatchedChars;
+					ret.Size = State.MatchedInChars;
 					ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
 					return ret;
 				}
 
 				// Push every new matching path
-				for (auto x = 0;x < mappingsStorage.CurSize;x++) {
-					auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
+				for (auto x = 0;x < mappingsStorage.Size();x++) {
+					const auto& item = mappingsStorage.GetElement(x);
 
 					matchingStates.push(MatchingState(
-						CMStringView(State.In.data() + item.second.size()),
+						CMStringView(State.In.data() + item.second),
 						State.Contains,
 						State.StartingIndex,
-						State.MatchedChars + item.second.size(),
-						State.LastMatched
+						State.MatchedInChars + item.second,
+						State.MatchedContainsChars,
+						State.LastMatched,
+						State.LastMatchedContainsPos
 					));
 				}
 			}
 		}
 
 		// Try to skip specified substrings
-		auto foundSkip = SkipSet->find(State.In[0]);
-		if (foundSkip != SkipSet->end()) {
-			for (auto it = foundSkip->second->begin();it != foundSkip->second->end();it++) {
-				auto thisSz = it->Len;
+		auto foundSkip = SkipSet[(unsigned char)State.In[0]];
+		if (foundSkip != nullptr) {
+			const auto& vec = *foundSkip;
+			for (auto x = 0;x < vec.size();x++) {
+				auto el = vec[x];
+				auto thisSz = el.Len;
 
-				if (thisSz <= State.In.size() && CMStringView(State.In.data(), thisSz) == (*it).View()) {
+				if (thisSz <= State.In.size() && CMStringView(State.In.data(), thisSz) == el.View()) {
 					// Push new path
 
 					matchingStates.push(MatchingState(
 						CMStringView(State.In.data() + thisSz),
 						State.Contains,
 						State.StartingIndex,
-						State.MatchedChars + thisSz,
-						State.LastMatched
+						State.MatchedInChars + thisSz,
+						State.MatchedContainsChars,
+						State.LastMatched,
+						State.LastMatchedContainsPos
 					));
 
 					(*StatePushes)++;
 					if (*StatePushes > Options.StatePushLimit) {
-						ret.Size = State.MatchedChars;
+						ret.Size = State.MatchedInChars;
 						ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
 						return ret;
 					}
@@ -442,25 +480,28 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingStat
 		size_t mappingsSize = 0;
 		if (State.Contains.size() != 0) {
 			mappingsStorage.Reset();
-			GetMappings(State.Contains, State.In, mappingsStorage);
+			if (Options.ContainsPosPointers == nullptr)
+				GetMappings(State.Contains, State.In, mappingsStorage);
+			else
+				GetMappings((CMStringPosPointers*)Options.ContainsPosPointers, (size_t)State.MatchedContainsChars, -1, State.In, mappingsStorage);
 			mappingsSize = mappingsStorage.Size();
 		}
 
 		if (mappingsSize != 0) {
 			*StatePushes += mappingsSize;
 			if (*StatePushes > Options.StatePushLimit) {
-				ret.Size = State.MatchedChars;
+				ret.Size = State.MatchedInChars;
 				ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
 				return ret;
 			}
 
-			for (auto x = 0;x < mappingsStorage.CurSize;x++) {
-				auto item = mappingsStorage.IsStack ? mappingsStorage.Stack[x] : mappingsStorage.Heap[x];
+			for (auto x = 0;x < mappingsStorage.Size();x++) {
+				const auto& item = mappingsStorage.GetElement(x);
 
 				// If we were about to eat all of `Contains`, that means we found the whole thing
-				if (item.first.size() == State.Contains.size()) {
+				if (item.first == State.Contains.size()) {
 					// But check for word boundary first
-					ret.Size = State.MatchedChars + item.second.size();
+					ret.Size = State.MatchedInChars + item.second;
 
 					if (Options.MatchOnWordBoundary) {
 						ret.Status = CheckWordBoundary(FullIn, CMStringView(FullIn.data() + State.StartingIndex, ret.Size));
@@ -479,11 +520,13 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingStat
 
 				// Push new path
 				matchingStates.push(MatchingState(
-					CMStringView(State.In.data() + item.second.size()),
-					CMStringView(State.Contains.data() + item.first.size()),
+					CMStringView(State.In.data() + item.second),
+					CMStringView(State.Contains.data() + item.first),
 					State.StartingIndex,
-					State.MatchedChars + item.second.size(),
-					CMStringView(State.Contains.data(), item.first.size())
+					State.MatchedInChars + item.second,
+					State.MatchedContainsChars + item.first,
+					CMStringView(State.Contains.data(), item.first),
+					State.MatchedContainsChars
 				));
 			}
 		} 
@@ -502,7 +545,7 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView FullIn, MatchingStat
 
 CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options)
 {
-	StackVector<std::pair<CMStringView, CMStringView>> MappingsStorage;
+	StackVector<std::pair<size_t, size_t>> MappingsStorage;
 	size_t statePushes = 0;
 	CMReturn ret;
 	ret.Start = 0;
@@ -519,7 +562,10 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 	for (int x = Options.StartIndex;Options.StartFromEnd ? (x >= 0) : (x < In.size());x += Options.StartFromEnd ? -1 : 1) {
 		// Find the beginning and construct state from it
 
-		GetMappings(Contains, CMStringView(In.data() + x), MappingsStorage);
+		if (Options.ContainsPosPointers == nullptr)
+			GetMappings(Contains, CMStringView(In.data() + x), MappingsStorage);
+		else
+			GetMappings((CMStringPosPointers*)Options.ContainsPosPointers, 0, -1, CMStringView(In.data() + x), MappingsStorage);
 		if (MappingsStorage.Size() == 0)
 			continue;
 
@@ -531,18 +577,18 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 			return ret;
 		}
 
-		for (auto i = 0;i < MappingsStorage.CurSize;i++) {
-			auto item = MappingsStorage.IsStack ? MappingsStorage.Stack[i] : MappingsStorage.Heap[i];
+		for (auto i = 0;i < MappingsStorage.Size();i++) {
+			const auto& item = MappingsStorage.GetElement(i);
 
 			// Matched full string and no repeats
-			if (item.first.size() == Contains.size() && x + item.second.size() == In.size()) {
+			if (item.first == Contains.size() && x + item.second == In.size()) {
 				if (Options.MatchOnWordBoundary)
-					ret.Status = CheckWordBoundary(In, CMStringView(In.data() + x, item.second.size()));
+					ret.Status = CheckWordBoundary(In, CMStringView(In.data() + x, item.second));
 				else
 					ret.Status = MATCH;
 
 				ret.Start = x;
-				ret.Size = item.second.size();
+				ret.Size = item.second;
 
 				if (ret.Status == MATCH) {
 					return ret;
@@ -555,11 +601,13 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 			auto result = IndexOfInner(
 				In,
 				MatchingState(
-					CMStringView(In.data() + x + item.second.size()),
-					CMStringView(Contains.data() + item.first.size()),
+					CMStringView(In.data() + x + item.second),
+					CMStringView(Contains.data() + item.first),
 					x,
-					item.second.size(),
-					CMStringView(Contains.data(), item.first.size())
+					item.second,
+					item.first,
+					CMStringView(Contains.data(), item.first),
+					0
 				),
 				&statePushes,
 				Options
@@ -573,12 +621,13 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 				for (int y = 0;y < result.Start;y++) {
 					bool modifiedSkipBlockLen = false;
 
-					auto foundSkip = SkipSet->find(In[y]);
-					if (foundSkip != SkipSet->end()) {
-						for (auto it = foundSkip->second->begin();it != foundSkip->second->end();it++) {
+					auto foundSkip = SkipSet[(unsigned char)In[y]];
+					if (foundSkip != nullptr) {
+						const auto& vec = *foundSkip;
+						for (auto it = vec.begin();it != vec.end();it++) {
 							auto thisSz = it->Len;
 
-							if (thisSz <= y + In.size() && CMStringView(In.data() + y, thisSz) == (*it).View()) {
+							if (thisSz <= y + In.size() && CMStringView(In.data() + y, thisSz) == it->View()) {
 								modifiedSkipBlockLen = true;
 								if (skipBlockStart == -1) {
 									skipBlockStart = y;
@@ -704,13 +753,13 @@ ConfusableMatcher::~ConfusableMatcher()
 	}
 	delete TheMap;
 
-	if (SkipSet->size() != 0) {
-		for (auto it = SkipSet->begin();it != SkipSet->end();it++) {
-			for (auto it2 = it->second->begin();it2 != it->second->end();it2++) {
-				it2->Free();
-			}
-			delete it->second;
+	for (auto x = 0;x < std::extent<decltype(SkipSet)>::value;x++) {
+		if (SkipSet[x] == nullptr)
+			continue;
+
+		for (auto it2 = SkipSet[x]->begin();it2 != SkipSet[x]->end();it2++) {
+			it2->Free();
 		}
+		delete SkipSet[x];
 	}
-	delete SkipSet;
 }
