@@ -231,5 +231,7 @@ class ConfusableMatcher
 	/// <returns>Opaque handle</returns>
 	CMStringPosPointers *ComputeStringPosPointers(std::string Contains);
 
+	void FreeStringPosPointers(CMStringPosPointers *In);
+
 	~ConfusableMatcher();
 };

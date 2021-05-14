@@ -755,6 +755,11 @@ CMReturn ConfusableMatcher::IndexOf(std::string In, std::string Contains, CMOpti
 	return IndexOfFromView(CMStringView(In), CMStringView(Contains), Options);
 }
 
+void ConfusableMatcher::FreeStringPosPointers(CMStringPosPointers *In)
+{
+	delete In;
+}
+
 ConfusableMatcher::~ConfusableMatcher()
 {
 
