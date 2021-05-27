@@ -1,5 +1,6 @@
 #include "UnitTest.h"
 #include <thread>
+#include <climits>
 
 void Test1()
 {
@@ -497,7 +498,7 @@ void Test17()
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
-	opts.TimeoutNs = ULONG_LONG_MAX;
+	opts.TimeoutNs = ULLONG_MAX;
 	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", opts);
 	AssertNoMatch(res);
 }
@@ -717,7 +718,7 @@ void Test30()
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
-	opts.TimeoutNs = ULONG_LONG_MAX;
+	opts.TimeoutNs = ULLONG_MAX;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N////////////////////////////////////////////////", "N", opts);
 
