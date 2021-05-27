@@ -75,7 +75,7 @@ a:;
 	}
 	opts.StartIndex = startIndex;
 	opts.StartFromEnd = startFromEnd;
-	opts.StatePushLimit = 100000;
+	opts.TimeoutNs = 1000000;
 
 	cm.IndexOf(in, contains, opts);
 }

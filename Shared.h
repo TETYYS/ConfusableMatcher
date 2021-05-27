@@ -7,7 +7,7 @@ typedef struct _CMOptions
 	bool MatchRepeating;
 	uint64_t StartIndex;
 	bool StartFromEnd;
-	uint64_t StatePushLimit;
+	uint64_t TimeoutNs;
 	bool MatchOnWordBoundary;
 	void *ContainsPosPointers;
 } CMOptions;
@@ -16,7 +16,7 @@ typedef enum _CM_RETURN_STATUS
 {
 	MATCH = 0,
 	NO_MATCH = 1,
-	STATE_PUSH_LIMIT_EXCEEDED = 2,
+	TIMEOUT = 2,
 	WORD_BOUNDARY_FAIL_START = 3,
 	WORD_BOUNDARY_FAIL_END = 4
 } CM_RETURN_STATUS;

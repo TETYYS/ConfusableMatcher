@@ -202,6 +202,47 @@ CMStringPosPointers *ConfusableMatcher::ComputeStringPosPointers(std::string Con
 	return ret;
 }
 
+int ConfusableMatcher::StrCompareWithSkips(const CMStringView In, size_t Pos, const CMStringView Compare)
+{
+	assert(In.size() > Pos);
+	assert(In.size() >= Compare.size());
+
+	auto in = In.data() + Pos;
+	auto cmp = Compare.data();
+	auto cmpEnd = Compare.data() + Compare.size();
+	auto inEnd = In.data() + In.size();
+
+	for (;in < inEnd && cmp < cmpEnd;) {
+		// Compare regular chars
+		if (*in == *cmp) {
+			in++;
+			cmp++;
+			continue;
+		}
+
+		// If it didn't match anything, try to skip chars in In
+		auto foundSkip = SkipSet[(unsigned char)*in];
+		if (foundSkip != nullptr) {
+			const auto& vec = *foundSkip;
+			for (auto i = 0;i < vec.size();i++) {
+				auto el = vec[i];
+				auto thisSz = el.Len;
+
+				if (in + thisSz <= inEnd && strncmp(in, el.Str, thisSz) == 0) {
+					in += thisSz;
+					goto next;
+				}
+			}
+		}
+
+		// Return no match if we exhausted all options
+		return -1;
+		next:;
+	}
+
+	return cmp != cmpEnd ? -1 : (in - In.data() - Pos);
+}
+
 void ConfusableMatcher::GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage)
 {
 	assert(Value.size() - ValuePos >= 1);
@@ -225,9 +266,15 @@ void ConfusableMatcher::GetMappings(CMStringPosPointers *PosPointers, size_t Pos
 		auto sz = vec.size();
 
 		for (auto x = 0;x < sz;x++) {
-			auto el = vec[x];
-			if (el.Len <= Value.size() - ValuePos && strncmp(el.Str, Value.data() + ValuePos, el.Len) == 0)
-				Storage.Push(std::pair<size_t, size_t>(inner.first, el.Len));
+			const auto el = vec[x];
+
+			if (el.Len > Value.size() - ValuePos)
+				continue;
+
+			auto valLen = StrCompareWithSkips(Value.data(), ValuePos, el.View());
+
+			if (valLen != -1)
+				Storage.Push(std::pair<size_t, size_t>(inner.first, valLen));
 		}
 	}
 
@@ -244,21 +291,32 @@ void ConfusableMatcher::GetMappings(const CMStringView Key, size_t KeyPos, const
 	if (keyArr == TheMap->end())
 		return;
 
-	for (auto it = keyArr->second->begin();it != keyArr->second->end();it++) {
-		if ((*it)->first.Len <= Key.size() - KeyPos && strncmp((*it)->first.Str, Key.data() + KeyPos, (*it)->first.Len) == 0) {
+	const auto &vec = *(keyArr->second);
+
+	for (auto x = 0;x < vec.size();x++) {
+		const auto item = vec[x];
+
+		if (item->first.Len <= Key.size() - KeyPos && strncmp(item->first.Str, Key.data() + KeyPos, item->first.Len) == 0) {
 			// Whole key found, search for value array
-			auto foundArr = (*it)->second->find(Value[ValuePos]);
-			if (foundArr == (*it)->second->end())
+			auto foundArr = item->second->find(Value[ValuePos]);
+			if (foundArr == item->second->end())
 				continue;
 
-			for (auto it2 = foundArr->second->begin();it2 != foundArr->second->end();it2++) {
-				if (it2->Len <= Value.size() - ValuePos && strncmp(it2->Str, Value.data() + ValuePos, it2->Len) == 0)
-					Storage.Push(std::pair<size_t, size_t>(((*it)->first).Len, (*it2).Len)); // Whole value found
+			const auto &secondVec = *(foundArr->second);
+
+			for (auto i = 0;i < secondVec.size();i++) {
+				const auto secondItem = secondVec[i];
+
+				if (secondItem.Len > Value.size() - ValuePos)
+					continue;
+
+				auto valLen = StrCompareWithSkips(Value.data(), ValuePos, secondItem.View());
+
+				if (valLen != -1)
+					Storage.Push(std::pair<size_t, size_t>((item->first).Len, valLen)); // Whole value found
 			}
 		}
 	}
-
-	return;
 }
 
 int ConfusableMatcher::MatchWordBoundary(unsigned char i0)
@@ -335,7 +393,7 @@ bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
 #undef process
 }
 
-size_t ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
+bool ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 {
 	/*
 	 * When searching to right from left, it needs to check everything at most four times as it, for example,
@@ -362,22 +420,22 @@ size_t ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 		process(MatchWordBoundary(In[1], In[2], In[3]), 3);
 		process(MatchWordBoundary(In[2], In[3]), 2);
 		if (MatchWordBoundary(In[3]))
-			return 1;
+			return true;
 	} else if (In.size() == 3) {
 		process(MatchWordBoundary(In[0], In[1], In[2]), 3);
 		process(MatchWordBoundary(In[1], In[2]), 2);
 		if (MatchWordBoundary(In[2]))
-			return 1;
+			return true;
 	} else if (In.size() == 2) {
 		process(MatchWordBoundary(In[0], In[1]), 2);
 		if (MatchWordBoundary(In[1]))
-			return 1;
+			return true;
 	} else {
 		if (MatchWordBoundary(In[0]))
-			return 1;
+			return true;
 	}
 
-	return 0;
+	return false;
 
 #undef process
 }
@@ -416,13 +474,14 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	return MATCH;
 }
 
-CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, size_t *StatePushes, const CMOptions Options)
+CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, const std::chrono::steady_clock::time_point Start, const CMOptions Options)
 {
 	plf::stack<MatchingState> matchingStates;
 	StackVector<std::pair<size_t, size_t>> mappingsStorage;
 	CMReturn ret;
 	ret.Start = StartingIndex;
 	ret.Status = NO_MATCH;
+	uint64_t statePops = 0;
 
 	auto handleEmptyMatchingStates = [this, &State, Options, &ret, In, Contains, StartingIndex]()
 	{
@@ -462,13 +521,6 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 			auto mappingsSize = mappingsStorage.Size();
 
 			if (mappingsSize != 0) {
-				*StatePushes += mappingsSize;
-				if (*StatePushes > Options.StatePushLimit) {
-					ret.Size = State.InPos - StartingIndex;
-					ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
-					return ret;
-				}
-
 				// Push every new matching path
 				for (auto x = 0;x < mappingsStorage.Size();x++) {
 					const auto& item = mappingsStorage.GetElement(x);
@@ -490,7 +542,7 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 				auto el = vec[x];
 				auto thisSz = el.Len;
 
-				if (thisSz <= (State.InPos - In.size()) && CMStringView(In.data() + State.InPos, thisSz) == el.View()) {
+				if (State.InPos + thisSz <= In.size() && strncmp(In.data() + State.InPos, el.Str, thisSz) == 0) {
 					// Push new path
 
 					matchingStates.push(MatchingState(
@@ -498,13 +550,6 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 						State.ContainsPos,
 						State.LastMatched
 					));
-
-					(*StatePushes)++;
-					if (*StatePushes > Options.StatePushLimit) {
-						ret.Size = State.InPos - StartingIndex;
-						ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
-						return ret;
-					}
 				}
 			}
 		}
@@ -521,13 +566,6 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 		}
 
 		if (mappingsSize != 0) {
-			*StatePushes += mappingsSize;
-			if (*StatePushes > Options.StatePushLimit) {
-				ret.Size = State.InPos - StartingIndex;
-				ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
-				return ret;
-			}
-
 			for (auto x = 0;x < mappingsStorage.Size();x++) {
 				const auto& item = mappingsStorage.GetElement(x);
 
@@ -568,17 +606,25 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 		// Fetch newest path --- this includes last new path from next substring matching
 		State = matchingStates.top();
 		matchingStates.pop();
+		statePops++;
+
+		if (statePops % 100 == 0 && (std::chrono::steady_clock::now() - Start).count() > Options.TimeoutNs) {
+			ret.Size = State.InPos - StartingIndex;
+			ret.Status = TIMEOUT;
+			return ret;
+		}
 	}
 }
 
 CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options)
 {
 	StackVector<std::pair<size_t, size_t>> MappingsStorage;
-	size_t statePushes = 0;
 	CMReturn ret;
 	ret.Start = 0;
 	ret.Size = 0;
 	ret.Status = NO_MATCH;
+
+	auto start = std::chrono::steady_clock::now();
 
 	/*
 	 * No need to check for `In` size, loop never executes due it's size and returns a proper result:
@@ -596,14 +642,6 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 			GetMappings((CMStringPosPointers*)Options.ContainsPosPointers, 0, -1, In, x, MappingsStorage);
 		if (MappingsStorage.Size() == 0)
 			continue;
-
-		statePushes += MappingsStorage.Size();
-		if (statePushes > Options.StatePushLimit) {
-			ret.Start = x;
-			ret.Size = 1;
-			ret.Status = STATE_PUSH_LIMIT_EXCEEDED;
-			return ret;
-		}
 
 		for (auto i = 0;i < MappingsStorage.Size();i++) {
 			const auto& item = MappingsStorage.GetElement(i);
@@ -635,13 +673,19 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 					item.first,
 					std::pair<size_t, size_t>(0, item.first)
 				),
-				&statePushes,
+				start,
 				Options
 			);
 
-			if (result.Status == NO_MATCH)
+			if (result.Status == NO_MATCH) {
+				if ((std::chrono::steady_clock::now() - start).count() > Options.TimeoutNs) {
+					ret.Start = x;
+					ret.Size = 1;
+					ret.Status = TIMEOUT;
+					return ret;
+				}
 				continue;
-			else if (result.Status == WORD_BOUNDARY_FAIL_START) {
+			} else if (result.Status == WORD_BOUNDARY_FAIL_START) {
 				// Special case for word boundary matching - we need to check for skips in the beginning
 				int skipBlockStart = -1, skipBlockLen = 0;
 				for (int y = 0;y < result.Start;y++) {
@@ -653,7 +697,7 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 						for (auto it = vec.begin();it != vec.end();it++) {
 							auto thisSz = it->Len;
 
-							if (thisSz <= y + In.size() && CMStringView(In.data() + y, thisSz) == it->View()) {
+							if (y + thisSz <= In.size() && strncmp(In.data() + y, it->Str, thisSz) == 0) {
 								modifiedSkipBlockLen = true;
 								if (skipBlockStart == -1) {
 									skipBlockStart = y;

@@ -11,7 +11,7 @@ void Test1()
 	map.push_back(std::pair("E", "T"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("TEST", "NICE", opts);
 	AssertMatch(res, 0, 4);
@@ -25,7 +25,7 @@ void Test2()
 	map.push_back(std::pair("V", "VO"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("VV", "VAVOVAVO", opts);
 	AssertNoMatch(res);
@@ -50,7 +50,7 @@ void Test3()
 	map.push_back(std::pair("B", "\U000000FA\U000000FF"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("\U00000002\U00000003\U000000FA\U000000FF", "AB", opts);
 	AssertMatch(res, 0, 6);
@@ -64,7 +64,7 @@ void Test4()
 	map.push_back(std::pair("D", "[)"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { "_", " " });
 	auto res = matcher.IndexOf("A__ _ $$$[)D", "ASD", opts);
@@ -80,7 +80,7 @@ void Test5()
 	map.push_back(std::pair("I", "/"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("/\\/CE", "NICE", opts);
 	AssertMatch(res, 0, 5);
@@ -95,7 +95,7 @@ void Test6()
 	map.push_back(std::pair("I", "/"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("I/\\/AM", "INAN", opts);
@@ -147,7 +147,7 @@ void Test7()
 	std::string in = "AAAAAAAAASSAFSAFNFNFNISFNSIFSIFJSDFUDSHF ASUF/|/__/|/___%/|/%I%%/|//|/%%%%%NNNN/|/NN__/|/N__𝘪G___%____$__G__𝓰𝘦Ѓ";
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { "_", "%", "$" });
 	auto res = matcher.IndexOf(in, "NIGGER", opts);
@@ -212,7 +212,7 @@ std::vector<std::tuple<std::pair<std::string, std::string>, std::pair<int, int>>
 CMOptions LidlNormalizerOpts()
 {
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000000;
 	opts.MatchRepeating = true;
 
 	return opts;
@@ -240,7 +240,7 @@ void Test8()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	auto matcher = ConfusableMatcher(map, { "\U00000332", "\U00000305", "[", "]" });
 	auto res = matcher.IndexOf(
 		"[̲̅a̲̅][̲̅b̲̅][̲̅c̲̅][̲̅d̲̅][̲̅e̲̅][̲̅f̲̅][̲̅g̲̅][̲̅h̲̅][̲̅i̲̅][̲̅j̲̅][̲̅k̲̅][̲̅l̲̅][̲̅m̲̅][̲̅n̲̅][̲̅o̲̅][̲̅p̲̅][̲̅q̲̅][̲̅r̲̅][̲̅s̲̅][̲̅t̲̅][̲̅u̲̅][̲̅v̲̅][̲̅w̲̅][̲̅x̲̅][̲̅y̲̅][̲̅z̲̅][̲̅0̲̅][̲̅1̲̅][̲̅2̲̅][̲̅3̲̅][̲̅4̲̅][̲̅5̲̅][̲̅6̲̅][̲̅7̲̅][̲̅8̲̅][̲̅9̲̅][̲̅0̲̅]",
@@ -274,7 +274,7 @@ void Test9()
 	map.push_back(std::pair("B", "ABCDEFGHIJKLMNOPQRS"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 1000;
+	opts.TimeoutNs = 100000;
 	auto matcher = ConfusableMatcher(map, { });
 
 	auto res = matcher.IndexOf(
@@ -333,7 +333,7 @@ void Test9()
 	AssertMatch(res, 0, 2);
 
 	opts.MatchRepeating = true;
-	opts.StatePushLimit = 2000;
+	opts.TimeoutNs = 1000000;
 	res = matcher2.IndexOf(
 		"PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789PQRSTUVWXYZ0123456789",
 		"BBBBBBBBBBBBBBBBBBBBBBBBBBB",
@@ -347,7 +347,7 @@ void Test10()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf(":)", "", opts);
@@ -369,7 +369,7 @@ void Test11()
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
-	opts.StatePushLimit = 1000;
+	opts.TimeoutNs = 100000;
 	auto res = matcher.IndexOf("ABAAA", "ABAR", opts);
 	AssertNoMatch(res);
 }
@@ -379,7 +379,7 @@ void Test12()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	auto matcher = ConfusableMatcher(map, { });
 
 	auto res = matcher.IndexOf("A", "A", opts);
@@ -424,7 +424,7 @@ void Test14()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, { });
 	auto running = true;
@@ -466,7 +466,7 @@ void Test15()
 	auto matcher = ConfusableMatcher(map, { "." });
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("FOLLOWONBOT.COM", "FOLLOWONBOT.COM", opts);
 	AssertMatch(res, 0, 15);
@@ -481,10 +481,10 @@ void Test16()
 	auto matcher = ConfusableMatcher(map, { });
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/", "NNNNNNNNNNNNNNNA", opts);
-	ASSERT_EQUAL(STATE_PUSH_LIMIT_EXCEEDED, res.Status);
+	ASSERT_EQUAL(TIMEOUT, res.Status);
 }
 
 void Test17()
@@ -497,7 +497,7 @@ void Test17()
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
-	opts.StatePushLimit = 100000;
+	opts.TimeoutNs = ULONG_LONG_MAX;
 	auto res = matcher.IndexOf("NNNNN__N_NN___NNNNNN_NN_N__NNNN__N_NNNNNICE", "NIRE", opts);
 	AssertNoMatch(res);
 }
@@ -513,7 +513,7 @@ void Test18()
 	auto matcher = ConfusableMatcher(map, {});
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("N12345M", "NAM", opts);
 	AssertMatch(res, 0, 7);
@@ -529,7 +529,7 @@ void Test19()
 	auto matcher = ConfusableMatcher(map, {});
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto res = matcher.IndexOf("111111", "ABC", opts);
 	AssertMatch(res, 0, 3);
@@ -611,7 +611,7 @@ void Test23()
 	std::string in = "AA BB CC AA FF AA RR";
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf(in, "AA", opts);
@@ -630,7 +630,7 @@ void Test24()
 	std::string in = "DASD";
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	opts.StartIndex = in.size() - 1;
 	opts.StartFromEnd = true;
@@ -648,10 +648,10 @@ void Test25()
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
 	opts.StartFromEnd = false;
-	opts.StatePushLimit = 20;
+	opts.TimeoutNs = 1;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf(in, "ASB", opts);
-	ASSERT_EQUAL(STATE_PUSH_LIMIT_EXCEEDED, res.Status);
+	ASSERT_EQUAL(TIMEOUT, res.Status);
 
 	opts.StartFromEnd = true;
 	opts.StartIndex = in.size() - 1;
@@ -664,7 +664,7 @@ void Test26()
 	auto map = GetDefaultMap();
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("AAA", "A", opts);
@@ -676,7 +676,7 @@ void Test27()
 	auto map = GetDefaultMap();
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("BB AAA", "A", opts);
@@ -688,7 +688,7 @@ void Test28()
 	auto map = GetDefaultMap();
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N|\\|NC", "N", opts);
@@ -703,7 +703,7 @@ void Test29()
 	map.push_back(std::pair("N", "//"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchRepeating = true;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N/\\///AN", "N", opts);
@@ -717,7 +717,7 @@ void Test30()
 
 	CMOptions opts = { };
 	opts.MatchRepeating = true;
-	opts.StatePushLimit = 60;
+	opts.TimeoutNs = ULONG_LONG_MAX;
 	auto matcher = ConfusableMatcher(map, {});
 	auto res = matcher.IndexOf("N////////////////////////////////////////////////", "N", opts);
 
@@ -730,7 +730,7 @@ void Test31()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 
 	auto matcher = ConfusableMatcher(map, {});
@@ -765,7 +765,7 @@ void Test32()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -802,7 +802,7 @@ void Test33()
 	std::string in = "a QBQQ";
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 	opts.StartFromEnd = true;
@@ -818,7 +818,7 @@ void Test34()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 
 	auto matcher = ConfusableMatcher(map, {});
@@ -854,7 +854,7 @@ void Test35()
 	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 
 	auto matcher = ConfusableMatcher(map, { " " });
@@ -878,7 +878,7 @@ void Test36()
 	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 
 	auto matcher = ConfusableMatcher(map, { " " });
@@ -897,7 +897,7 @@ void Test37()
 	map.push_back(std::pair("p", "p"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -911,7 +911,7 @@ void Test38()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 
 	auto matcher = ConfusableMatcher(map, { });
 	auto res = matcher.IndexOf("a", "", opts);
@@ -929,7 +929,7 @@ void Test39()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -952,7 +952,7 @@ void Test40()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 	opts.StartFromEnd = true;
@@ -984,7 +984,7 @@ void Test41()
 	map.push_back(std::pair("p", "p"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -998,7 +998,7 @@ void Test42()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1018,7 +1018,7 @@ void Test43()
 	map.push_back(std::pair("S", "Ž"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1037,7 +1037,7 @@ void Test44()
 	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1051,7 +1051,7 @@ void Test45()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1083,7 +1083,7 @@ void Test46()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1140,7 +1140,7 @@ void Test47()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1208,7 +1208,7 @@ void Test48()
 	map.push_back(std::pair("THI", "$"));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 
@@ -1236,7 +1236,7 @@ void Test49()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.StartIndex = 3;
 
@@ -1272,7 +1272,7 @@ void Test50()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.MatchRepeating = true;
 	opts.StartIndex = 3;
@@ -1308,7 +1308,7 @@ void Test51()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.StartIndex = 3;
 
@@ -1345,7 +1345,7 @@ void Test52()
 	map.push_back(std::pair(" ", " "));
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.StartIndex = 3;
 
@@ -1369,9 +1369,23 @@ void Test53()
 	std::vector<std::pair<std::string, std::string>> map;
 
 	CMOptions opts = { };
-	opts.StatePushLimit = 50000;
+	opts.TimeoutNs = 1000000;
 	opts.MatchOnWordBoundary = true;
 	opts.StartIndex = 3;
 
 	auto matcher = ConfusableMatcher(map, { "\xff" });
+}
+
+void Test54()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair("N", "/\\/"));
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { "\x20" });
+	auto res = matcher.IndexOf("/ \\ / I C E", "NICE", opts);
+	AssertMatch(res, 0, 11);
 }

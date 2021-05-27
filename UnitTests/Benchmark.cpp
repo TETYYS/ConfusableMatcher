@@ -332,7 +332,7 @@ public:
 		}
 
 		opts = { };
-		opts.StatePushLimit = 50000;
+		opts.TimeoutNs = 1000000;
 		opts.MatchOnWordBoundary = true;
 		opts.MatchRepeating = true;
 
@@ -397,7 +397,7 @@ public:
 		std::vector<std::pair<std::string, std::string>> map;
 
 		opts = { };
-		opts.StatePushLimit = 50000;
+		opts.TimeoutNs = 100000000;
 		opts.MatchOnWordBoundary = true;
 		opts.MatchRepeating = true;
 
@@ -463,7 +463,7 @@ public:
 		auto map = GetDefaultMap();
 
 		opts = { };
-		opts.StatePushLimit = 50000;
+		opts.TimeoutNs = 100000000;
 		opts.MatchRepeating = true;
 		matcher = new ConfusableMatcher(map, { "_", "%", "$" });
 		opts.ContainsPosPointers = matcher->ComputeStringPosPointers("NIGGER");
@@ -495,7 +495,7 @@ public:
 		auto map = GetDefaultMap();
 
 		opts = { };
-		opts.StatePushLimit = 50000;
+		opts.TimeoutNs = 100000000;
 		opts.MatchRepeating = true;
 		matcher = new ConfusableMatcher(map, { "_", "%", "$" });
 	}
