@@ -153,19 +153,12 @@ class ConfusableMatcher
 	static std::bitset<1114110> WordBoundaries;
 	static bool Initialized;
 
-	google::dense_hash_map<
-		char, // Key first char
-		std::vector<
-			std::pair<
-				CMString, // Key whole
-				CMInnerHashMap*
-			>*
-		>*,
-		std::hash<char>,
-		std::equal_to<char>,
-		google::libc_allocator_with_realloc<std::pair<const char, std::vector<std::pair<CMString, CMInnerHashMap*>*>*>>
-	>
-		*TheMap;
+	std::vector<
+		std::pair<
+			CMString, // Key whole
+			CMInnerHashMap*
+		>
+	> TheMap[256];
 
 	void Init();
 	bool AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
