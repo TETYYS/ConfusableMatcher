@@ -21,7 +21,7 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 	if (Value[0] == '\x00' || Value[0] == '\x01')
 		throw std::runtime_error("Value cannot begin with \x00 or \x01");
 
-	auto &keyArr = TheMap[Key[0]];
+	auto &keyArr = TheMap[(unsigned char)Key[0]];
 
 	CMInnerHashMap *valDict = nullptr;
 
@@ -122,7 +122,7 @@ void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Ou
 	assert(In.size() >= 1);
 
 	// Find array of whole keys
-	auto keyArr = TheMap[In[0]];
+	auto keyArr = TheMap[(unsigned char)In[0]];
 
 	for (auto keyIterator = keyArr.begin();keyIterator != keyArr.end();keyIterator++) {
 		if (keyIterator->first.Len > In.size() || (keyIterator->first).View() != CMStringView(In.data(), keyIterator->first.Len))
@@ -147,7 +147,7 @@ CMStringPosPointers *ConfusableMatcher::ComputeStringPosPointers(std::string Con
 	for (auto x = 0;x < Contains.size();x++) {
 		std::vector<std::pair<size_t /* Key len */, const CMInnerHashMap*>> vec;
 
-		auto keyArr = TheMap[Contains[x]];
+		auto keyArr = TheMap[(unsigned char)Contains[x]];
 
 		// Find and put all inner hashmaps, together with key substring length
 		for (auto keyIterator = keyArr.begin();keyIterator != keyArr.end();keyIterator++) {
@@ -249,7 +249,7 @@ void ConfusableMatcher::GetMappings(const CMStringView Key, size_t KeyPos, const
 	assert(Value.size() - ValuePos >= 1);
 
 	// Find array of whole keys
-	const auto &vec = TheMap[Key[KeyPos]];
+	const auto &vec = TheMap[(unsigned char)Key[KeyPos]];
 
 	for (auto x = 0;x < vec.size();x++) {
 		const auto &item = vec[x];

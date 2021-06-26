@@ -1390,3 +1390,16 @@ void Test54()
 	auto res = matcher.IndexOf("/ \\ / I C E", "NICE", opts);
 	AssertMatch(res, 0, 11);
 }
+
+void Test55()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	for (auto x = 128;x < 256;x++) {
+		map.push_back(std::pair(std::string(1, (char)x), "b"));
+	}
+
+	for (auto x = 0;x < 1000;x++) {
+		auto matcher = new ConfusableMatcher(map, {  });
+		delete matcher;
+	}
+}
