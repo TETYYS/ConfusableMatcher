@@ -1397,7 +1397,7 @@ void Test55()
 	map.push_back(std::pair("L", "🇱"));
 	map.push_back(std::pair("E", "🇪"));
 	map.push_back(std::pair("A", "🇦"));
-	map.push_back(std::pair("F", " 🇫"));
+	map.push_back(std::pair("F", "🇫"));
 	map.push_back(std::pair("Y", "🇾"));
 
 	CMOptions opts = {};
@@ -1406,9 +1406,9 @@ void Test55()
 	opts.TimeoutNs = 1000000;
 	opts.StartIndex = 0;
 
-	auto matcher = ConfusableMatcher(map, {" "});
+	auto matcher = ConfusableMatcher(map, {" ", " "});
 	auto res = matcher.IndexOf("🇱  🇪  🇦  🇫  🇾", "LEAFY", opts);
-	AssertMatch(res, 0, 14);
+	AssertMatch(res, 0, 36);
 }
 
 void Test56()
@@ -1417,7 +1417,7 @@ void Test56()
 	map.push_back(std::pair("L", "L"));
 	map.push_back(std::pair("E", "🇪"));
 	map.push_back(std::pair("A", "🇦"));
-	map.push_back(std::pair("F", " 🇫"));
+	map.push_back(std::pair("F", "🇫"));
 	map.push_back(std::pair("Y", "Y"));
 
 	CMOptions opts = {};
@@ -1426,7 +1426,7 @@ void Test56()
 	opts.TimeoutNs = 1000000;
 	opts.StartIndex = 0;
 
-	auto matcher = ConfusableMatcher(map, {});
+	auto matcher = ConfusableMatcher(map, {" ", " "});
 	auto res = matcher.IndexOf("L 🇪 🇦 🇫 Y", "LEAFY", opts);
-	AssertMatch(res, 0, 8);
+	AssertMatch(res, 0, 26);
 }
