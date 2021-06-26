@@ -1410,3 +1410,23 @@ void Test55()
 	auto res = matcher.IndexOf("🇱  🇪  🇦  🇫  🇾", "LEAFY", opts);
 	AssertMatch(res, 0, 14);
 }
+
+void Test56()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair("L", "L"));
+	map.push_back(std::pair("E", "🇪"));
+	map.push_back(std::pair("A", "🇦"));
+	map.push_back(std::pair("F", " 🇫"));
+	map.push_back(std::pair("Y", "Y"));
+
+	CMOptions opts = {};
+	opts.MatchRepeating = true;
+	opts.MatchOnWordBoundary = true;
+	opts.TimeoutNs = 1000000;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, {});
+	auto res = matcher.IndexOf("L 🇪 🇦 🇫 Y", "LEAFY", opts);
+	AssertMatch(res, 0, 8);
+}
