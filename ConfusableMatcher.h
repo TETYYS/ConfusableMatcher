@@ -125,7 +125,7 @@ public:
 
 	void Free()
 	{
-		delete Str;
+		delete[] Str;
 	}
 };
 
@@ -161,6 +161,7 @@ class ConfusableMatcher
 	> TheMap[256];
 
 	void Init();
+	void Free();
 	bool AddMapping(std::string Key, std::string Value, bool CheckValueDuplicate);
 	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
 	void GetMappings(CMStringView Key, size_t KeyPos, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);

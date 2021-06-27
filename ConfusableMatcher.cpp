@@ -94,21 +94,26 @@ ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::str
 		ConfusableMatcher::Initialized = true;
 	}
 
-	if (AddDefaultValues) {
-		// Add some default values
-		for (auto x = 'A';x <= 'Z';x++) {
-			AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
-			AddMapping(std::string(1, (char)x), std::string(1, (char)(x + 0x20)), true);
-		}
-		for (auto x = '0';x <= '9';x++)
-			AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
-	}
-
-	for (auto it = InputMap.begin();it != InputMap.end();it++)
-		AddMapping(it->first, it->second, true);
-
 	for (auto x = 0;x < std::extent<decltype(SkipSet)>::value;x++) {
 		SkipSet[x] = nullptr;
+	}
+
+	try {
+		if (AddDefaultValues) {
+			// Add some default values
+			for (auto x = 'A';x <= 'Z';x++) {
+				AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
+				AddMapping(std::string(1, (char)x), std::string(1, (char)(x + 0x20)), true);
+			}
+			for (auto x = '0';x <= '9';x++)
+				AddMapping(std::string(1, (char)x), std::string(1, (char)x), true);
+		}
+
+		for (auto it = InputMap.begin();it != InputMap.end();it++)
+			AddMapping(it->first, it->second, true);
+	} catch (std::exception) {
+		Free();
+		throw;
 	}
 
 	for (auto it = Skip.begin();it != Skip.end();it++)
@@ -762,7 +767,7 @@ void ConfusableMatcher::FreeStringPosPointers(CMStringPosPointers *In)
 	delete In;
 }
 
-ConfusableMatcher::~ConfusableMatcher()
+void ConfusableMatcher::Free()
 {
 	for (auto x = 0;x < std::extent<decltype(TheMap)>::value;x++) {
 		for (auto keyArrayIt = TheMap[x].begin();keyArrayIt != TheMap[x].end();keyArrayIt++) {
@@ -786,4 +791,9 @@ ConfusableMatcher::~ConfusableMatcher()
 		}
 		delete SkipSet[x];
 	}
+}
+
+ConfusableMatcher::~ConfusableMatcher()
+{
+	Free();
 }

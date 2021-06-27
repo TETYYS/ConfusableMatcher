@@ -1230,6 +1230,8 @@ void Test48()
 
 	res = matcher.IndexOf("THERE IS NO SUCH $/V6", in, opts);
 	AssertMatch(res, 17, 4);
+
+	matcher.FreeStringPosPointers((CMStringPosPointers*)opts.ContainsPosPointers);
 }
 
 void Test49()
