@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, debian-latest]
+        os: [windows-latest, ubuntu-latest]
         compiler: [clang, gcc, msvc]
         exclude:
          - os: debian-latest
@@ -41,14 +41,14 @@ jobs:
             cmake --build . --config Release -v
 
       - name: Build release clang (Linux)
-        if: startsWith(matrix.os, 'debian') && matrix.compiler == 'clang'
+        if: startsWith(matrix.os, 'ubuntu') && matrix.compiler == 'clang'
         run: |
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
             cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="-Ofast -DNDEBUG" -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++" ..
             cmake --build . --config Release
       - name: Build release gcc (Linux)
-        if: startsWith(matrix.os, 'debian') && matrix.compiler == 'gcc'
+        if: startsWith(matrix.os, 'ubuntu') && matrix.compiler == 'gcc'
         run: |
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
