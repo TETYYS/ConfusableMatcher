@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest-clang-cl, debian-latest]
+        os: [windows-latest, debian-latest]
         compiler: [clang, gcc, msvc]
         exclude:
          - os: debian-latest
@@ -26,7 +26,7 @@ jobs:
         run: |
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
-            choco install ninja
+            call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
             cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG" -DCMAKE_C_COMPILER="clang-cl.exe" -DCMAKE_CXX_COMPILER="clang-cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Release -v
       - name: Build release msvc (Windows)
@@ -34,7 +34,7 @@ jobs:
         run: |
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
-            choco install ninja
+            call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
             cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG /Zc:__cplusplus" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Release -v
 
