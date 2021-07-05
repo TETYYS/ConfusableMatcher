@@ -28,7 +28,7 @@ jobs:
             mkdir build-${{ matrix.compiler }}
             cd build-${{ matrix.compiler }}
             call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
-            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_RELEASE="/MDd /O2 /Ob2 /Zc:__cplusplus" -DCMAKE_C_COMPILER="clang-cl.exe" -DCMAKE_CXX_COMPILER="clang-cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
+            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_RELEASE="/MDd /O2 /Ob2" -DCMAKE_C_COMPILER="clang-cl.exe" -DCMAKE_CXX_COMPILER="clang-cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Debug -v
             RunUnitTests.exe
       - name: Build release msvc (Windows)
@@ -38,7 +38,7 @@ jobs:
             mkdir build-${{ matrix.compiler }}
             cd build-${{ matrix.compiler }}
             call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
-            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_RELEASE="/MDd /O2 /Ob2 /Zc:__cplusplus" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
+            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_RELEASE="/MDd /O2 /Ob2" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Debug -v
             RunUnitTests.exe
 
