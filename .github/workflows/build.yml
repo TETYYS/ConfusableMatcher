@@ -15,16 +15,14 @@ jobs:
          - os: windows-latest
            compiler: gcc
       fail-fast: false
+    defaults:
+      run:
+        working-directory: ./build-${{ matrix.compiler }}
 
     steps:
       - uses: actions/checkout@v2.3.4
         with:
           submodules: true
-
-      - name: Build dir
-        run: |
-            mkdir build-${{ matrix.compiler }}
-            cd build-${{ matrix.compiler }}
 
       - name: Build release clang (Windows)
         if: startsWith(matrix.os, 'windows') && matrix.compiler == 'clang'
