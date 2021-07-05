@@ -1,0 +1,60 @@
+name: CMake Build Matrix
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        compiler: [clang, gcc, msvc]
+        exclude:
+         - os: ubuntu-latest
+           compiler: msvc
+         - os: windows-latest
+           compiler: gcc
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: true
+
+      - name: Build release clang (Windows)
+        if: startsWith(matrix.os, 'windows') && matrix.compiler == 'clang'
+        shell: cmd
+        run: |
+            mkdir build-${{ matrix.compiler }}
+            cd build-${{ matrix.compiler }}
+            call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
+            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_RELEASE="/MDd /O2 /Ob2" -DCMAKE_C_COMPILER="clang-cl.exe" -DCMAKE_CXX_COMPILER="clang-cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
+            cmake --build . --config Debug -v
+            RunUnitTests.exe
+      - name: Build release msvc (Windows)
+        if: startsWith(matrix.os, 'windows') && matrix.compiler == 'msvc'
+        shell: cmd
+        run: |
+            mkdir build-${{ matrix.compiler }}
+            cd build-${{ matrix.compiler }}
+            call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
+            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_RELEASE="/MDd /O2 /Ob2" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
+            cmake --build . --config Debug -v
+            RunUnitTests.exe
+
+      - name: Build release clang (Linux)
+        if: startsWith(matrix.os, 'ubuntu') && matrix.compiler == 'clang'
+        run: |
+            mkdir ./build-${{ matrix.compiler }}
+            cd ./build-${{ matrix.compiler }}
+            cmake -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_DEBUG="-Ofast -g -fsanitize=address" -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++" ..
+            cmake --build . --config Debug
+            ./RunUnitTests
+      - name: Build release gcc (Linux)
+        if: startsWith(matrix.os, 'ubuntu') && matrix.compiler == 'gcc'
+        run: |
+            mkdir ./build-${{ matrix.compiler }}
+            cd ./build-${{ matrix.compiler }}
+            cmake -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_CXX_FLAGS_DEBUG="-Ofast -g -fsanitize=address" -DCMAKE_C_COMPILER="gcc" -DCMAKE_CXX_COMPILER="g++" ..
+            cmake --build . --config Debug
+            ./RunUnitTests
