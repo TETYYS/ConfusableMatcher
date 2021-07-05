@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, debian-latest]
+        os: [windows-latest-clang-cl, debian-latest]
         compiler: [clang, gcc, msvc]
         exclude:
          - os: debian-latest
