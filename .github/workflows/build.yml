@@ -27,23 +27,23 @@ jobs:
             cd build-${{ matrix.compiler }}
 
       - name: Build release clang (Windows)
-        if: startsWith(matrix.os, 'windows') && matrix.compiler == "clang"
+        if: startsWith(matrix.os, 'windows') && matrix.compiler == 'clang'
         run: |
             cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG" -DCMAKE_C_COMPILER="clang-cl.exe" -DCMAKE_CXX_COMPILER="clang-cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Release -v
       - name: Build release msvc (Windows)
-        if: startsWith(matrix.os, 'windows') && matrix.compiler == "msvc"
+        if: startsWith(matrix.os, 'windows') && matrix.compiler == 'msvc'
         run: |
             cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG /Zc:__cplusplus" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Release -v
 
       - name: Build release clang (Linux)
-        if: startsWith(matrix.os, 'debian') && matrix.compiler == "clang"
+        if: startsWith(matrix.os, 'debian') && matrix.compiler == 'clang'
         run: |
             cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="-Ofast -DNDEBUG" -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++" ..
             cmake --build . --config Release
       - name: Build release gcc (Linux)
-        if: startsWith(matrix.os, 'debian') && matrix.compiler == "gcc"
+        if: startsWith(matrix.os, 'debian') && matrix.compiler == 'gcc'
         run: |
             cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="-Ofast -DNDEBUG" -DCMAKE_C_COMPILER="gcc" -DCMAKE_CXX_COMPILER="g++" ..
             cmake --build . --config Release
