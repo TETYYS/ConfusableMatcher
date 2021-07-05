@@ -23,6 +23,7 @@ jobs:
 
       - name: Build release clang (Windows)
         if: startsWith(matrix.os, 'windows') && matrix.compiler == 'clang'
+        shell: cmd
         run: |
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
@@ -31,6 +32,7 @@ jobs:
             cmake --build . --config Release -v
       - name: Build release msvc (Windows)
         if: startsWith(matrix.os, 'windows') && matrix.compiler == 'msvc'
+        shell: cmd
         run: |
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
