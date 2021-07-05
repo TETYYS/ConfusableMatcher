@@ -50,5 +50,5 @@ auto res = matcher.IndexOf(
 // res.Start = 3 --- Index
 // res.Size = 2 --- Length
 
-delete posPointers;
+matcher.FreeStringPosPointers(posPointers);
 ```
