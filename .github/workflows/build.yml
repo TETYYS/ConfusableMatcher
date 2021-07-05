@@ -35,7 +35,7 @@ jobs:
             mkdir ./build-${{ matrix.compiler }}
             cd ./build-${{ matrix.compiler }}
             choco install ninja
-            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG /Zc:__cplusplus" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
+            cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG /Zc:__cplusplus" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_MAKE_PROGRAM="ninja.exe" ..
             cmake --build . --config Release -v
 
       - name: Build release clang (Linux)
