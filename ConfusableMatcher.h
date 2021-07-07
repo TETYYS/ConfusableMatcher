@@ -171,10 +171,7 @@ class ConfusableMatcher
 	bool MatchWordBoundaryToRight(CMStringView In);
 	bool MatchWordBoundaryToLeft(CMStringView In);
 	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
-	int MatchWordBoundary(unsigned char i0);
-	int MatchWordBoundary(unsigned char i0, unsigned char i1);
-	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2);
-	int MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3);
+	int MatchWordBoundary(const unsigned char *In, int Size);
 	int StrCompareWithSkips(const CMStringView In, size_t Pos, const CMStringView Compare);
 
 	public:

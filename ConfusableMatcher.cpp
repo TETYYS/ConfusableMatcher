@@ -282,44 +282,43 @@ void ConfusableMatcher::GetMappings(const CMStringView Key, size_t KeyPos, const
 	}
 }
 
-int ConfusableMatcher::MatchWordBoundary(unsigned char i0)
+/*
+ * -1 for UTF-8 decoding failure
+ * 0 for no-match
+ * 1 for match
+ * 2 for match but not to whole Size
+ */
+int ConfusableMatcher::MatchWordBoundary(const unsigned char *In, int Size)
 {
-	// Nothing special for 0-255
-	return ConfusableMatcher::WordBoundaries[i0];
-}
+	uint64_t c;
+	int gotSize;
+	if (Size >= 1 && In[0] < 0x80) {
+		c = In[0];
+		gotSize = 1;
+	} else if (Size >= 2 && (In[0] & 0xe0) == 0xc0) {
+		c = ((uint64_t)(In[0] & 0x1f) << 6) | ((uint64_t)(In[1] & 0x3f) << 0);
+		gotSize = 2;
+	} else if (Size >= 3 && (In[0] & 0xf0) == 0xe0) {
+		c = ((uint64_t)(In[0] & 0x0f) << 12) | ((uint64_t)(In[1] & 0x3f) << 6) | ((uint64_t)(In[2] & 0x3f) << 0);
+		gotSize = 3;
+	} else if (Size >= 4 && (In[0] & 0xf8) == 0xf0 && (In[0] <= 0xf4)) {
+		c = ((uint64_t)(In[0] & 0x07) << 18) | ((uint64_t)(In[1] & 0x3f) << 12) | ((uint64_t)(In[2] & 0x3f) << 6) | ((uint64_t)(In[3] & 0x3f) << 0);
+		gotSize = 4;
+	} else {
+		c = -1;
+	}
+	if (c >= 0xd800 && c <= 0xdfff)
+		return -1;
 
-int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1)
-{
-	// UTF8 decode and find in word boundaries bitset
-	auto c = ((i0 & 0x1F) << 6) | (i1 & 0x3F);
+	auto match = c < ConfusableMatcher::WordBoundaries.size() && ConfusableMatcher::WordBoundaries[c];
 
-	if ((i1 & 0xC0) == 0x80)
-		return ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
-	return -1;
-}
-
-int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2)
-{
-	auto c = ((i0 & 0x0F) << 12) | ((i1 & 0x3F) << 6) | (i2 & 0x3F);
-
-	if ((i1 & 0xC0) == 0x80 && ((i2 & 0xC0) == 0x80))
-		return ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
-	return -1;
-}
-
-int ConfusableMatcher::MatchWordBoundary(unsigned char i0, unsigned char i1, unsigned char i2, unsigned char i3)
-{
-	// Here also check for length as it can exceed it
-	auto c = ((i0 & 0x07) << 18) | ((i1 & 0x3F) << 12) | ((i2 & 0x3F) << 6) | (i3 & 0x3F);
-	if ((i1 & 0xC0) == 0x80 && ((i2 & 0xC0) == 0x80))
-		return c < ConfusableMatcher::WordBoundaries.size() && ConfusableMatcher::WordBoundaries[c] ? 1 : 0;
-	return -1;
+	return match ? (gotSize == Size ? 1 : 2) : 0;
 }
 
 bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
 {
 	/*
-	 * When searching to left from right, it doesn't need to worry about anything special
+	 * When searching from right to left, it doesn't need to worry about anything special
 	 * as first char will be always in the same spot
 	 */
 	assert(In.size() < 5);
@@ -328,39 +327,25 @@ bool ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView In)
 		return false;
 
 	/*
-	 * 1 for match, 0 for match failure and -1 for UTF8 decode failure
-	 * 
-	 * For UTF8 decode failure it can try other length codepoints
-	 * 
-	 * For match failure it must immediately return because codepoint has been consumed
-	 * and it is searching for word boundary chars at the start of `In`
+	 * Try to decode any kind of char, starting with smallest chars first.
+	 * Here we don't care if we decode character that spans less bytes than we have in In.size()
+	 * as start will always touch the match
 	 */
-	int res;
-#define process(i) { res = (i); if (res == 1) { return true; } else if (res == 0) { return false; } }
-
-	if (In.size() == 4) {
-		process(MatchWordBoundary(In[0], In[1], In[2], In[3]));
-		process(MatchWordBoundary(In[0], In[1], In[2]));
-		process(MatchWordBoundary(In[0], In[1]));
-	} else if (In.size() == 3) {
-		process(MatchWordBoundary(In[0], In[1], In[2]));
-		process(MatchWordBoundary(In[0], In[1]));
-	} else if (In.size() == 2)
-		process(MatchWordBoundary(In[0], In[1]));
-
-	if (MatchWordBoundary(In[0]))
+	if (MatchWordBoundary((const unsigned char*)In.data(), In.size()) >= 1)
 		return true;
 
 	return false;
-
-#undef process
 }
 
 bool ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 {
 	/*
-	 * When searching to right from left, it needs to check everything at most four times as it, for example,
+	 * When searching from left to right, it needs to check everything at most four times as it, for example,
 	 * can decode 3 char length codepoint without a match and then find a match at fourth position
+	 * 
+	 * aaabMATCH
+	 *    ^ word boundary
+	 * ^^^ decodable char
 	 */
 	assert(In.size() < 5);
 	
@@ -368,39 +353,20 @@ bool ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 		return false;
 
 	/*
-	 * 1 for match, 0 for UTF8 decode but match failure and -1 for UTF8 decode failure
+	 * Look for chars that were decoded exactly to In.size() - x, we want to avoid scenarios where
+	 * char is decodable and is a word boundary char, but does not touch the match.
 	 * 
-	 * For match failure it needs to skip whole char as codepoint is consumed and try matching unconsumed part again
-	 * 
-	 * For UTF8 decode failure it can still try decoding codepoints that touch the right as it doesn't
-	 * need word boundary chars that are not actually touching the match string
+	 * Start looking at characters nearest to the match because... it seems right that way
 	 */
-	int res;
-#define process(i, x) { res = (i); if (res == 1) { return (x); } else if (res == 0) { return MatchWordBoundaryToRight(CMStringView(In.data() + x, In.size() - x)); } }
-
-	if (In.size() == 4) {
-		process(MatchWordBoundary(In[0], In[1], In[2], In[3]), 4);
-		process(MatchWordBoundary(In[1], In[2], In[3]), 3);
-		process(MatchWordBoundary(In[2], In[3]), 2);
-		if (MatchWordBoundary(In[3]))
+	for (int x = In.size() - 1;x >= 0;x--) {
+		int res = MatchWordBoundary((const unsigned char*)In.data() + x, In.size() - x);
+		if (res == 1) {
 			return true;
-	} else if (In.size() == 3) {
-		process(MatchWordBoundary(In[0], In[1], In[2]), 3);
-		process(MatchWordBoundary(In[1], In[2]), 2);
-		if (MatchWordBoundary(In[2]))
-			return true;
-	} else if (In.size() == 2) {
-		process(MatchWordBoundary(In[0], In[1]), 2);
-		if (MatchWordBoundary(In[1]))
-			return true;
-	} else {
-		if (MatchWordBoundary(In[0]))
-			return true;
+		}
 	}
 
 	return false;
 
-#undef process
 }
 
 CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringView Match)
