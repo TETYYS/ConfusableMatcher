@@ -1405,3 +1405,24 @@ void Test55()
 		delete matcher;
 	}
 }
+
+void Test56()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair("y", "y"));
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = true;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("NICE\U0000200EA", "NICE", opts);
+	AssertMatch(res, 0, 4);
+
+	res = matcher.IndexOf("A\U0000200ENICE", "NICE", opts);
+	AssertMatch(res, 4, 4);
+
+	res = matcher.IndexOf("‎y‎", "y", opts);
+	AssertMatch(res, 3, 1);
+}
