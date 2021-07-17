@@ -412,7 +412,7 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 	ret.Status = NO_MATCH;
 	uint64_t statePops = 0;
 
-	auto handleEmptyMatchingStates = [this, &State, Options, &ret, In, Contains, StartingIndex]()
+	auto handleAteAll = [this, &State, Options, &ret, In, Contains, StartingIndex]()
 	{
 		if (State.ContainsPos == Contains.size()) {
 			if (Options.MatchOnWordBoundary) {
@@ -429,10 +429,10 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 
 	while (true) {
 		if (State.InPos == In.size()) {
-			// Current state ate all of `In` and we have no other state to get from stack
-			if (matchingStates.empty()) {
-				return handleEmptyMatchingStates();
-			}
+			// Current state ate all of `In`. Check if it's the result we are looking for or if we are out of options
+			ret = handleAteAll();
+			if (ret.Status == MATCH || matchingStates.empty())
+				return ret;
 
 			// This happens when there are still matches in stack but current state ate all of `In`
 			State = matchingStates.top();
@@ -524,12 +524,9 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 					std::pair<size_t, size_t>(State.ContainsPos, item.first)
 				));
 			}
-		} 
-		if (mappingsSize == 0) {
-			// We didn't put any new paths into stack so check if we depleted all paths
-			if (matchingStates.empty()) {
-				return handleEmptyMatchingStates();
-			}
+		} else if (matchingStates.empty()) {
+			// We didn't do anything, check if we got passed a positive match from the beginning
+			return handleAteAll();
 		}
 
 		// Fetch newest path --- this includes last new path from next substring matching
@@ -574,24 +571,6 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 
 		for (auto i = 0;i < MappingsStorage.Size();i++) {
 			const auto& item = MappingsStorage.GetElement(i);
-
-			// Matched full string and no repeats
-			if (item.first == Contains.size() && x + item.second == In.size()) {
-				if (Options.MatchOnWordBoundary)
-					ret.Status = CheckWordBoundary(In, CMStringView(In.data() + x, item.second));
-				else
-					ret.Status = MATCH;
-
-				ret.Start = x;
-				ret.Size = item.second;
-
-				if (ret.Status == MATCH) {
-					return ret;
-				} else {
-					assert(ret.Status != WORD_BOUNDARY_FAIL_END);
-					continue;
-				}
-			}
 
 			auto result = IndexOfInner(
 				In,
