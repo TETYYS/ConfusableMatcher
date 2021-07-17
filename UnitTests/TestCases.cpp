@@ -1426,3 +1426,18 @@ void Test56()
 	res = matcher.IndexOf("‎y‎", "y", opts);
 	AssertMatch(res, 3, 1);
 }
+
+void Test57()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = true;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto res = matcher.IndexOf("AABBB", "AAB", opts);
+	AssertMatch(res, 0, 5);
+}
