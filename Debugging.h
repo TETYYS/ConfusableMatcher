@@ -21,6 +21,9 @@ struct MatchingStateDebugFailures : MatchingState
 public:
 	void AddFailure(uint64_t InPos, uint64_t ContainsPos, CM_DEBUG_FAILURE_REASON Reason)
 	{
+		if (this->Failures->size() >= 1000)
+			return;
+
 		CMDebugFailure failure{ InPos, ContainsPos, Reason };
 		this->Failures->push_back(failure);
 	}

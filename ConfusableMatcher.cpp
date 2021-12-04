@@ -692,7 +692,9 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 					ret.Status = TIMEOUT;
 
 					if constexpr (DebugLevel == DEBUG_LEVEL_FAILURES) {
-						Failures->push_back(CMDebugFailure{ (uint64_t)x, 0, DEBUG_FAILURE_REASON_TIMEOUT });
+						if (Failures->size() < 1000) {
+							Failures->push_back(CMDebugFailure{ (uint64_t)x, 0, DEBUG_FAILURE_REASON_TIMEOUT });
+						}
 					}
 
 					return ret;
@@ -788,7 +790,7 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 	}
 
 	if constexpr (DebugLevel == DEBUG_LEVEL_FAILURES) {
-		if (ret.Status != MATCH) {
+		if (ret.Status != MATCH && Failures->size() < 1000) {
 			Failures->push_back(CMDebugFailure{ In.size(), 0, DEBUG_FAILURE_REASON_NO_PATH});
 		}
 	}
