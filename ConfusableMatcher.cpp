@@ -55,9 +55,8 @@ bool ConfusableMatcher::AddMapping(std::string Key, std::string Value, bool Chec
 
 	if (CheckValueDuplicate) {
 		for (auto it = valArr->begin();it != valArr->end();it++) {
-			if ((*it).View() == Value) {
+			if ((*it).View() == Value)
 				return false;
-			}
 		}
 	}
 
@@ -73,14 +72,12 @@ bool ConfusableMatcher::AddSkip(std::string In)
 
 	auto found = SkipSet[(unsigned char)In[0]];
 
-	if (found == nullptr) {
+	if (found == nullptr)
 		SkipSet[(unsigned char)In[0]] = found = new std::vector<CMString>();
-	}
 
 	for (auto it = found->begin();it != found->end();it++) {
-		if ((*it).View() == In) {
+		if ((*it).View() == In)
 			return false;
-		}
 	}
 
 	found->push_back(in);
@@ -89,15 +86,13 @@ bool ConfusableMatcher::AddSkip(std::string In)
 
 ConfusableMatcher::ConfusableMatcher(std::vector<std::pair<std::string, std::string>> InputMap, std::unordered_set<std::string> Skip, bool AddDefaultValues)
 {
-	if (!ConfusableMatcher::Initialized)
-	{
+	if (!ConfusableMatcher::Initialized) {
 		ConfusableMatcher::Init();
 		ConfusableMatcher::Initialized = true;
 	}
 
-	for (auto x = 0;x < std::extent<decltype(SkipSet)>::value;x++) {
+	for (auto x = 0;x < std::extent<decltype(SkipSet)>::value;x++)
 		SkipSet[x] = nullptr;
-	}
 
 	try {
 		if (AddDefaultValues) {
@@ -138,9 +133,8 @@ void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Ou
 		auto values = keyIterator->second;
 
 		for (auto valueIterator = values->begin();valueIterator != values->end();valueIterator++) {
-			for (auto x = 0;x < valueIterator->second->size();x++) {
+			for (auto x = 0;x < valueIterator->second->size();x++)
 				Output.Push((*(valueIterator->second))[x]);
-			}
 		}
 	}
 }
@@ -361,9 +355,8 @@ bool ConfusableMatcher::MatchWordBoundaryToRight(CMStringView In)
 	 */
 	for (int x = In.size() - 1;x >= 0;x--) {
 		int res = MatchWordBoundary((const unsigned char*)In.data() + x, In.size() - x);
-		if (res == 1) {
+		if (res == 1)
 			return true;
-		}
 	}
 
 	return false;
@@ -383,9 +376,8 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 		startPass = ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(Match.data() - distToStart, distToStart));
 	}
 
-	if (!startPass) {
+	if (!startPass)
 		return WORD_BOUNDARY_FAIL_START;
-	}
 
 	if (In.data() + In.size() == Match.data() + Match.size()) {
 		// Check if it is at the end of In
@@ -397,9 +389,8 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 		endPass = ConfusableMatcher::MatchWordBoundaryToLeft(CMStringView(Match.data() + Match.size(), distToEnd));
 	}
 
-	if (!endPass) {
+	if (!endPass)
 		return WORD_BOUNDARY_FAIL_END;
-	}
 
 	return MATCH;
 }
@@ -419,9 +410,9 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 	auto handleAteAll = [this, &State, Options, &ret, In, Contains, StartingIndex]()
 	{
 		if (State.ContainsPos == Contains.size()) {
-			if (Options.MatchOnWordBoundary) {
+			if (Options.MatchOnWordBoundary)
 				ret.Status = CheckWordBoundary(In, CMStringView(In.data() + StartingIndex, State.InPos - StartingIndex));
-			} else
+			else
 				ret.Status = MATCH;
 
 			ret.Size = State.InPos - StartingIndex;
@@ -853,9 +844,9 @@ void ConfusableMatcher::Free()
 		for (auto keyArrayIt = TheMap[x].begin();keyArrayIt != TheMap[x].end();keyArrayIt++) {
 			keyArrayIt->first.Free();
 			for (auto valMapIt = keyArrayIt->second->begin();valMapIt != keyArrayIt->second->end();valMapIt++) {
-				for (auto valArrayIt = valMapIt->second->begin();valArrayIt != valMapIt->second->end();valArrayIt++) {
+				for (auto valArrayIt = valMapIt->second->begin();valArrayIt != valMapIt->second->end();valArrayIt++)
 					valArrayIt->Free();
-				}
+
 				delete valMapIt->second;
 			}
 			delete keyArrayIt->second;
@@ -866,9 +857,9 @@ void ConfusableMatcher::Free()
 		if (SkipSet[x] == nullptr)
 			continue;
 
-		for (auto it2 = SkipSet[x]->begin();it2 != SkipSet[x]->end();it2++) {
+		for (auto it2 = SkipSet[x]->begin();it2 != SkipSet[x]->end();it2++)
 			it2->Free();
-		}
+
 		delete SkipSet[x];
 	}
 }

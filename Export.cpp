@@ -15,9 +15,8 @@ CMHandle InitConfusableMatcher(CMMap Map, char **IgnoreList, int IgnoreCount, bo
 	}
 
 	std::unordered_set<std::string> ignore;
-	for (auto x = 0; x < IgnoreCount; x++) {
+	for (auto x = 0; x < IgnoreCount; x++)
 		ignore.insert(std::string(IgnoreList[x]));
-	}
 
 	auto matcher = new ConfusableMatcher(map, ignore, AddDefaultValues);
 	return matcher;
@@ -73,9 +72,8 @@ uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t Out
 	if (OutputSize < outputSize)
 		return outputSize;
 
-	for (auto x = 0;x < output.Size();x++) {
+	for (auto x = 0;x < output.Size();x++)
 		Output[x] = output.GetElement(x).Str;
-	}
 
 	return outputSize;
 }
