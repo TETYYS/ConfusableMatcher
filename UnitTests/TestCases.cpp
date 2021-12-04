@@ -1441,3 +1441,202 @@ void Test57()
 	auto res = matcher.IndexOf("AABBB", "AAB", opts);
 	AssertMatch(res, 0, 5);
 }
+
+void Test58()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = false;
+	opts.MatchRepeating = false;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto failures = std::vector<CMDebugFailure>();
+
+	matcher.IndexOfDebugFailures("A5D", "ASD", opts, &failures);
+
+	ASSERT_EQUAL(2, failures.size());
+
+	ASSERT_EQUAL(1, failures[0].InPos);
+	ASSERT_EQUAL(1, failures[0].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[0].Reason);
+
+	ASSERT_EQUAL(3, failures[1].InPos);
+	ASSERT_EQUAL(0, failures[1].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[1].Reason);
+}
+
+void Test59()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = false;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto failures = std::vector<CMDebugFailure>();
+
+	matcher.IndexOfDebugFailures("ASDF", "ASD", opts, &failures);
+
+	ASSERT_EQUAL(2, failures.size());
+
+	ASSERT_EQUAL(3, failures[0].InPos);
+	ASSERT_EQUAL(3, failures[0].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_WORD_BOUNDARY_FAIL_END, failures[0].Reason);
+
+	ASSERT_EQUAL(4, failures[1].InPos);
+	ASSERT_EQUAL(0, failures[1].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[1].Reason);
+}
+
+void Test60()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = false;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto failures = std::vector<CMDebugFailure>();
+
+	matcher.IndexOfDebugFailures("FASD", "ASD", opts, &failures);
+
+	ASSERT_EQUAL(2, failures.size());
+
+	ASSERT_EQUAL(4, failures[0].InPos);
+	ASSERT_EQUAL(3, failures[0].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_WORD_BOUNDARY_FAIL_START, failures[0].Reason);
+
+	ASSERT_EQUAL(4, failures[1].InPos);
+	ASSERT_EQUAL(0, failures[1].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[1].Reason);
+}
+
+void Test61()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 0;
+	opts.MatchOnWordBoundary = true;
+	opts.MatchRepeating = false;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto failures = std::vector<CMDebugFailure>();
+
+	matcher.IndexOfDebugFailures("ASDASD", "ASB", opts, &failures);
+
+	ASSERT_EQUAL(2, failures.size());
+
+	ASSERT_EQUAL(2, failures[0].InPos);
+	ASSERT_EQUAL(2, failures[0].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[0].Reason);
+
+	ASSERT_EQUAL(0, failures[1].InPos);
+	ASSERT_EQUAL(0, failures[1].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_TIMEOUT, failures[1].Reason);
+}
+
+void Test62()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair("N", "/\\/"));
+	map.push_back(std::pair("I", "/"));
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = false;
+	opts.MatchRepeating = true;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto failures = std::vector<CMDebugFailure>();
+
+	matcher.IndexOfDebugFailures("I/\\/AM", "INAN", opts, &failures);
+
+	ASSERT_EQUAL(5, failures.size());
+
+	int x = 0;
+	ASSERT_EQUAL(5, failures[x].InPos);
+	ASSERT_EQUAL(3, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_NEW_PATHS, failures[x++].Reason); // No new paths between AM and AN, M != N
+
+	ASSERT_EQUAL(2, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Path end between /\ and IN, first I matches to I, repeats onto / and then N doesnt match with \/AM
+
+	ASSERT_EQUAL(2, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Inner matching from index 1, same situation as above
+
+	ASSERT_EQUAL(4, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Path end between /A and IN, I repeats 4 times (I, /, \, /) and then N doesn't match to A
+
+	ASSERT_EQUAL(6, failures[x].InPos);
+	ASSERT_EQUAL(0, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // End of matching
+}
+
+void Test63()
+{
+	std::vector<std::pair<std::string, std::string>> map;
+	map.push_back(std::pair("d", "d"));
+	map.push_back(std::pair("m", "m"));
+	map.push_back(std::pair("x", "x"));
+
+	CMOptions opts = { };
+	opts.TimeoutNs = 1000000;
+	opts.MatchOnWordBoundary = false;
+	opts.MatchRepeating = true;
+	opts.StartIndex = 0;
+
+	auto matcher = ConfusableMatcher(map, { });
+	auto failures = std::vector<CMDebugFailure>();
+
+	matcher.IndexOfDebugFailures("First Lord of the Admiralty, to publish a joint work with contributions by both Cook and Reinhold Forster had fallen through, Georg, who was not bound", "Admx", opts, &failures);
+
+	ASSERT_EQUAL(8, failures.size());
+
+	int x = 0;
+	ASSERT_EQUAL(21, failures[x].InPos);
+	ASSERT_EQUAL(3, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(24, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(41, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(86, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(109, failures[x].InPos);
+	ASSERT_EQUAL(2, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(112, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(139, failures[x].InPos);
+	ASSERT_EQUAL(1, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+
+	ASSERT_EQUAL(150, failures[x].InPos);
+	ASSERT_EQUAL(0, failures[x].ContainsPos);
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason);
+}

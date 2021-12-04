@@ -28,10 +28,10 @@ if(MSVC)
 	string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
 endif()
 
-add_library(ConfusableMatcherStatic STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h" "ConfusableMatcherData.cpp")
+add_library(ConfusableMatcherStatic STATIC "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h" "ConfusableMatcherData.cpp" "Debugging.h" "MatchingState.h")
 set_target_properties(ConfusableMatcherStatic PROPERTIES OUTPUT_NAME confusablematcher)
 
-add_library(ConfusableMatcher SHARED "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h" "ConfusableMatcherData.cpp")
+add_library(ConfusableMatcher SHARED "ConfusableMatcher.cpp" "ConfusableMatcher.h" "Export.cpp" "Export.h" "Config.h" "Shared.h" "ConfusableMatcherData.cpp" "Debugging.h" "MatchingState.h")
 set_target_properties(ConfusableMatcher PROPERTIES PREFIX "")
 
 target_link_libraries(ConfusableMatcherStatic ${CMAKE_THREAD_LIBS_INIT})
