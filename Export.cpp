@@ -36,6 +36,31 @@ CMReturn StringIndexOf(CMHandle CM, char *In, char *Contains, CMOptions Options)
 		Options);
 }
 
+CMReturn StringIndexOfDebugFailures(CMHandle CM, char* In, char* Contains, CMOptions Options, CMDebugFailures *DebugOut)
+{
+	std::vector<CMDebugFailure> failures;
+
+	auto ret = ((ConfusableMatcher*)CM)->IndexOfDebugFailures(
+		In,
+		Contains,
+		Options,
+		&failures);
+
+	DebugOut->Size = failures.size();
+	DebugOut->Failures = new CMDebugFailure[failures.size()];
+
+	for (auto x = 0; x < failures.size(); x++) {
+		DebugOut->Failures[x] = failures[x];
+	}
+
+	return ret;
+}
+
+void FreeDebugFailures(CMDebugFailures* DebugFailures)
+{
+	delete DebugFailures->Failures;
+}
+
 uint32_t GetKeyMappings(CMHandle CM, char *In, const char **Output, uint32_t OutputSize)
 {
 	auto cm = (ConfusableMatcher*)CM;

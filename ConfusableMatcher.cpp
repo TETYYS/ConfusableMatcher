@@ -6,6 +6,7 @@
 #include <sparsehash/dense_hash_map>
 using google::dense_hash_map;
 #include "ConfusableMatcher.h"
+#include "Debugging.h"
 
 std::bitset<1114110> ConfusableMatcher::WordBoundaries;
 bool ConfusableMatcher::Initialized;
@@ -127,7 +128,7 @@ void ConfusableMatcher::GetKeyMappings(std::string In, StackVector<CMString> &Ou
 	assert(In.size() >= 1);
 
 	// Find array of whole keys
-	auto keyArr = TheMap[(unsigned char)In[0]];
+	auto &keyArr = TheMap[(unsigned char)In[0]];
 
 	for (auto keyIterator = keyArr.begin();keyIterator != keyArr.end();keyIterator++) {
 		if (keyIterator->first.Len > In.size() || (keyIterator->first).View() != CMStringView(In.data(), keyIterator->first.Len))
@@ -152,7 +153,7 @@ CMStringPosPointers *ConfusableMatcher::ComputeStringPosPointers(std::string Con
 	for (auto x = 0;x < Contains.size();x++) {
 		std::vector<std::pair<size_t /* Key len */, const CMInnerHashMap*>> vec;
 
-		auto keyArr = TheMap[(unsigned char)Contains[x]];
+		auto &keyArr = TheMap[(unsigned char)Contains[x]];
 
 		// Find and put all inner hashmaps, together with key substring length
 		for (auto keyIterator = keyArr.begin();keyIterator != keyArr.end();keyIterator++) {
@@ -192,7 +193,7 @@ int ConfusableMatcher::StrCompareWithSkips(const CMStringView In, size_t Pos, co
 		if (foundSkip != nullptr) {
 			const auto& vec = *foundSkip;
 			for (auto i = 0;i < vec.size();i++) {
-				auto el = vec[i];
+				auto &el = vec[i];
 				auto thisSz = el.Len;
 
 				if (in + thisSz <= inEnd && strncmp(in, el.Str, thisSz) == 0) {
@@ -218,7 +219,7 @@ void ConfusableMatcher::GetMappings(CMStringPosPointers *PosPointers, size_t Pos
 	const auto& vals = PosPointers->PosPointers[Pos];
 
 	for (auto x = 0;x < vals.size();x++) {
-		const auto inner = vals[x];
+		const auto &inner = vals[x];
 
 		// For if we are looking for specific substring of key
 		if (ExactSize != -1 && inner.first != ExactSize)
@@ -233,7 +234,7 @@ void ConfusableMatcher::GetMappings(CMStringPosPointers *PosPointers, size_t Pos
 		auto sz = vec.size();
 
 		for (auto x = 0;x < sz;x++) {
-			const auto el = vec[x];
+			const auto &el = vec[x];
 
 			if (el.Len > Value.size() - ValuePos)
 				continue;
@@ -268,7 +269,7 @@ void ConfusableMatcher::GetMappings(const CMStringView Key, size_t KeyPos, const
 			const auto &secondVec = *(foundArr->second);
 
 			for (auto i = 0;i < secondVec.size();i++) {
-				const auto secondItem = secondVec[i];
+				const auto &secondItem = secondVec[i];
 
 				if (secondItem.Len > Value.size() - ValuePos)
 					continue;
@@ -304,9 +305,9 @@ int ConfusableMatcher::MatchWordBoundary(const unsigned char *In, int Size)
 	} else if (Size >= 4 && (In[0] & 0xf8) == 0xf0 && (In[0] <= 0xf4)) {
 		c = ((uint64_t)(In[0] & 0x07) << 18) | ((uint64_t)(In[1] & 0x3f) << 12) | ((uint64_t)(In[2] & 0x3f) << 6) | ((uint64_t)(In[3] & 0x3f) << 0);
 		gotSize = 4;
-	} else {
-		c = -1;
-	}
+	} else
+		return -1;
+
 	if (c >= 0xd800 && c <= 0xdfff)
 		return -1;
 
@@ -403,9 +404,12 @@ CM_RETURN_STATUS ConfusableMatcher::CheckWordBoundary(CMStringView In, CMStringV
 	return MATCH;
 }
 
-CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, const std::chrono::steady_clock::time_point Start, const CMOptions Options)
+template<typename TMatchingState>
+CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, TMatchingState State, const std::chrono::steady_clock::time_point Start, const CMOptions Options)
 {
-	plf::stack<MatchingState> matchingStates;
+	static_assert(std::is_base_of<MatchingState, TMatchingState>::value, "State is not of MatchingState");
+
+	plf::stack<TMatchingState> matchingStates;
 	StackVector<std::pair<size_t, size_t>> mappingsStorage;
 	CMReturn ret;
 	ret.Start = StartingIndex;
@@ -428,11 +432,29 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 
 
 	while (true) {
+		bool pathPushed = false;
+
 		if (State.InPos == In.size()) {
 			// Current state ate all of `In`. Check if it's the result we are looking for or if we are out of options
 			ret = handleAteAll();
-			if (ret.Status == MATCH || matchingStates.empty())
+			if (ret.Status == MATCH || matchingStates.empty()) {
+				if constexpr (IsDebuggingFailures<TMatchingState>) {
+					if (ret.Status != MATCH) {
+						switch (ret.Status) {
+							case WORD_BOUNDARY_FAIL_START:
+								State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_WORD_BOUNDARY_FAIL_START);
+								break;
+							case WORD_BOUNDARY_FAIL_END:
+								State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_WORD_BOUNDARY_FAIL_END);
+								break;
+							default:
+								State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_NO_PATH);
+								break;
+						}
+					}
+				}
 				return ret;
+			}
 
 			// This happens when there are still matches in stack but current state ate all of `In`
 			State = matchingStates.top();
@@ -454,11 +476,21 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 				for (auto x = 0;x < mappingsStorage.Size();x++) {
 					const auto& item = mappingsStorage.GetElement(x);
 
-					matchingStates.push(MatchingState(
-						State.InPos + item.second,
-						State.ContainsPos,
-						State.LastMatched
-					));
+					if constexpr (IsDebuggingFailures<TMatchingState>) {
+						pathPushed = true;
+						matchingStates.push(TMatchingState(
+							State.InPos + item.second,
+							State.ContainsPos,
+							State.LastMatched,
+							State.Failures
+						));
+					} else {
+						matchingStates.push(TMatchingState(
+							State.InPos + item.second,
+							State.ContainsPos,
+							State.LastMatched
+						));
+					}
 				}
 			}
 		}
@@ -468,17 +500,27 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 		if (foundSkip != nullptr) {
 			const auto& vec = *foundSkip;
 			for (auto x = 0;x < vec.size();x++) {
-				auto el = vec[x];
+				auto& el = vec[x];
 				auto thisSz = el.Len;
 
 				if (State.InPos + thisSz <= In.size() && strncmp(In.data() + State.InPos, el.Str, thisSz) == 0) {
 					// Push new path
 
-					matchingStates.push(MatchingState(
-						State.InPos + thisSz,
-						State.ContainsPos,
-						State.LastMatched
-					));
+					if constexpr (IsDebuggingFailures<TMatchingState>) {
+						pathPushed = true;
+						matchingStates.push(TMatchingState(
+							State.InPos + thisSz,
+							State.ContainsPos,
+							State.LastMatched,
+							State.Failures
+						));
+					} else {
+						matchingStates.push(TMatchingState(
+							State.InPos + thisSz,
+							State.ContainsPos,
+							State.LastMatched
+						));
+					}
 				}
 			}
 		}
@@ -518,15 +560,50 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 				}
 
 				// Push new path
-				matchingStates.push(MatchingState(
-					State.InPos + item.second,
-					State.ContainsPos + item.first,
-					std::pair<size_t, size_t>(State.ContainsPos, item.first)
-				));
+				if constexpr (IsDebuggingFailures<TMatchingState>) {
+					pathPushed = true;
+					matchingStates.push(TMatchingState(
+						State.InPos + item.second,
+						State.ContainsPos + item.first,
+						std::pair<size_t, size_t>(State.ContainsPos, item.first),
+						State.Failures
+					));
+				} else {
+					matchingStates.push(TMatchingState(
+						State.InPos + item.second,
+						State.ContainsPos + item.first,
+						std::pair<size_t, size_t>(State.ContainsPos, item.first)
+					));
+				}
 			}
 		} else if (matchingStates.empty()) {
 			// We didn't do anything, check if we got passed a positive match from the beginning
-			return handleAteAll();
+			if constexpr (IsDebuggingFailures<TMatchingState>) {
+				auto debugRet = handleAteAll();
+
+				if (debugRet.Status != MATCH) {
+					switch (ret.Status) {
+						case WORD_BOUNDARY_FAIL_START:
+							State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_WORD_BOUNDARY_FAIL_START);
+							break;
+						case WORD_BOUNDARY_FAIL_END:
+							State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_WORD_BOUNDARY_FAIL_END);
+							break;
+						default:
+							State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_NO_PATH);
+							break;
+					}
+				}
+
+				return debugRet;
+			} else
+				return handleAteAll();
+		}
+
+		if constexpr (IsDebuggingFailures<TMatchingState>) {
+			if (!pathPushed) {
+				State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_NO_NEW_PATHS);
+			}
 		}
 
 		// Fetch newest path --- this includes last new path from next substring matching
@@ -537,12 +614,18 @@ CMReturn ConfusableMatcher::IndexOfInner(const CMStringView In, const CMStringVi
 		if (statePops % 100 == 0 && (std::chrono::steady_clock::now() - Start).count() > Options.TimeoutNs) {
 			ret.Size = State.InPos - StartingIndex;
 			ret.Status = TIMEOUT;
+
+			if constexpr (IsDebuggingFailures<TMatchingState>) {
+				State.AddFailure(State.InPos, State.ContainsPos, DEBUG_FAILURE_REASON_TIMEOUT);
+			}
+
 			return ret;
 		}
 	}
 }
 
-CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options)
+template <CMDebugLevel DebugLevel>
+CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options, std::vector<CMDebugFailure>* Failures)
 {
 	StackVector<std::pair<size_t, size_t>> MappingsStorage;
 	CMReturn ret;
@@ -572,24 +655,46 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 		for (auto i = 0;i < MappingsStorage.Size();i++) {
 			const auto& item = MappingsStorage.GetElement(i);
 
-			auto result = IndexOfInner(
-				In,
-				Contains,
-				x,
-				MatchingState(
-					x + item.second,
-					item.first,
-					std::pair<size_t, size_t>(0, item.first)
-				),
-				start,
-				Options
-			);
+			CMReturn result;
+			if constexpr (DebugLevel == DEBUG_LEVEL_FAILURES) {
+				result = IndexOfInner<MatchingStateDebugFailures>(
+					In,
+					Contains,
+					x,
+					MatchingStateDebugFailures(
+						x + item.second,
+						item.first,
+						std::pair<size_t, size_t>(0, item.first),
+						Failures
+					),
+					start,
+					Options
+				);
+			} else {
+				result = IndexOfInner<MatchingState>(
+					In,
+					Contains,
+					x,
+					MatchingState(
+						x + item.second,
+						item.first,
+						std::pair<size_t, size_t>(0, item.first)
+					),
+					start,
+					Options
+				);
+			}
 
 			if (result.Status == NO_MATCH) {
 				if ((std::chrono::steady_clock::now() - start).count() > Options.TimeoutNs) {
 					ret.Start = x;
 					ret.Size = 1;
 					ret.Status = TIMEOUT;
+
+					if constexpr (DebugLevel == DEBUG_LEVEL_FAILURES) {
+						Failures->push_back(CMDebugFailure{ (uint64_t)x, 0, DEBUG_FAILURE_REASON_TIMEOUT });
+					}
+
 					return ret;
 				}
 				continue;
@@ -607,9 +712,9 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 
 							if (y + thisSz <= In.size() && strncmp(In.data() + y, it->Str, thisSz) == 0) {
 								modifiedSkipBlockLen = true;
-								if (skipBlockStart == -1) {
+								if (skipBlockStart == -1)
 									skipBlockStart = y;
-								}
+
 								skipBlockLen += thisSz;
 
 								if (skipBlockStart + skipBlockLen == x) {
@@ -641,7 +746,7 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 									 */
 									for (auto sbs = 3;sbs >= 0;sbs--) {
 										if (skipBlockStart > sbs && ConfusableMatcher::MatchWordBoundaryToRight(CMStringView(In.data() + skipBlockStart - (sbs+1), sbs+1))) {
-											ret.Start = skipBlockStart + skipBlockLen;
+											ret.Start = (uint64_t)skipBlockStart + skipBlockLen;
 											ret.Size = result.Size;
 											ret.Status = MATCH;
 											return ret;
@@ -682,6 +787,12 @@ CMReturn ConfusableMatcher::IndexOfFromView(CMStringView In, CMStringView Contai
 		MappingsStorage.Reset();
 	}
 
+	if constexpr (DebugLevel == DEBUG_LEVEL_FAILURES) {
+		if (ret.Status != MATCH) {
+			Failures->push_back(CMDebugFailure{ In.size(), 0, DEBUG_FAILURE_REASON_NO_PATH});
+		}
+	}
+
 	return ret;
 }
 
@@ -704,7 +815,29 @@ CMReturn ConfusableMatcher::IndexOf(std::string In, std::string Contains, CMOpti
 		return ret;
 	}
 
-	return IndexOfFromView(CMStringView(In), CMStringView(Contains), Options);
+	return IndexOfFromView<DEBUG_LEVEL_NONE>(CMStringView(In), CMStringView(Contains), Options, nullptr);
+}
+
+CMReturn ConfusableMatcher::IndexOfDebugFailures(std::string In, std::string Contains, CMOptions Options, std::vector<CMDebugFailure>* Failures)
+{
+	if (Contains.size() == 0) {
+		CMReturn ret;
+
+		ret.Status = MATCH;
+		ret.Start = 0;
+		ret.Size = 0;
+		return ret;
+	}
+
+	if (Options.StartIndex >= In.size() || Options.StartIndex < 0) {
+		CMReturn ret;
+		ret.Status = NO_MATCH;
+		ret.Start = 0;
+		ret.Size = 0;
+		return ret;
+	}
+
+	return IndexOfFromView<DEBUG_LEVEL_FAILURES>(CMStringView(In), CMStringView(Contains), Options, Failures);
 }
 
 void ConfusableMatcher::FreeStringPosPointers(CMStringPosPointers *In)

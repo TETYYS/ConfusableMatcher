@@ -47,6 +47,8 @@ extern "C" {
 	EXPORTED CMHandle __cdecl InitConfusableMatcher(CMMap Map, char** IgnoreList, int IgnoreCount, bool AddDefaultValues);
 	EXPORTED void __cdecl FreeConfusableMatcher(CMHandle In);
 	EXPORTED CMReturn __cdecl StringIndexOf(CMHandle CM, char* In, char* Contains, CMOptions Options);
+	EXPORTED CMReturn StringIndexOfDebugFailures(CMHandle CM, char* In, char* Contains, CMOptions Options, CMDebugFailures* DebugOut);
+	EXPORTED void FreeDebugFailures(CMDebugFailures* DebugFailures);
 	EXPORTED uint32_t __cdecl GetKeyMappings(CMHandle CM, char* In, const char** Output, uint32_t OutputSize);
 	EXPORTED CMComputedStringPosPointersHandle __cdecl ComputeStringPosPointers(CMHandle CM, char *Contains);
 	EXPORTED void __cdecl FreeStringPosPointers(CMComputedStringPosPointersHandle StringPosPointers);

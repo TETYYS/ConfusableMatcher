@@ -9,6 +9,8 @@
 
 #include "Config.h"
 #include "Shared.h"
+#include "Debugging.h"
+#include "MatchingState.h"
 
 #ifdef WIN32
 	#include <string_view>
@@ -30,20 +32,6 @@ namespace google
 
 	template<class Key, class T, class HashFcn, class EqualKey, class Alloc>
 		class dense_hash_map;
-};
-
-struct MatchingState
-{
-	size_t InPos;
-	size_t ContainsPos;
-	std::pair<size_t, size_t> LastMatched;
-
-	MatchingState(size_t InPos, size_t ContainsPos, std::pair<size_t, size_t> LastMatched)
-	{
-		this->InPos = InPos;
-		this->ContainsPos = ContainsPos;
-		this->LastMatched = LastMatched;
-	}
 };
 
 constexpr int STACKVECTOR_SIZE = 64;
@@ -166,8 +154,13 @@ class ConfusableMatcher
 	void GetMappings(CMStringPosPointers *PosPointers, size_t Pos, long long ExactSize, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
 	void GetMappings(CMStringView Key, size_t KeyPos, CMStringView Value, size_t ValuePos, StackVector<std::pair<size_t, size_t>> &Storage);
 	bool AddSkip(std::string In);
-	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options);
-	CMReturn IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, MatchingState State, const std::chrono::steady_clock::time_point Start, const CMOptions Options);
+
+	template <CMDebugLevel DebugLevel>
+	CMReturn IndexOfFromView(CMStringView In, CMStringView Contains, CMOptions Options, std::vector<CMDebugFailure>* Failures);
+
+	template<typename TMatchingState>
+	CMReturn IndexOfInner(const CMStringView In, const CMStringView Contains, int StartingIndex, TMatchingState State, const std::chrono::steady_clock::time_point Start, const CMOptions Options);
+
 	bool MatchWordBoundaryToRight(CMStringView In);
 	bool MatchWordBoundaryToLeft(CMStringView In);
 	CM_RETURN_STATUS CheckWordBoundary(CMStringView In, CMStringView Match);
@@ -191,6 +184,16 @@ class ConfusableMatcher
 	/// <param name="Options">Matching options</param>
 	/// <returns><see cref="CMReturn" /></returns>
 	CMReturn IndexOf(std::string In, std::string Contains, CMOptions Options);
+
+	/// <summary>
+	/// Searches for <paramref name="In" /> in <paramref name="Contains" />, using <paramref name="Options" /> and ConfusableMatcher instance and put diagnostic information about matching into <paramref name="Failures" />
+	/// </summary>
+	/// <param name="In">Haystack</param>
+	/// <param name="Contains">Needle</param>
+	/// <param name="Options">Matching options</param>
+	/// <param name="Failures">Matching failure diagnostic information output</param>
+	/// <returns><see cref="CMReturn" /></returns>
+	CMReturn IndexOfDebugFailures(std::string In, std::string Contains, CMOptions Options, std::vector<CMDebugFailure>* Failures);
 
 	/// <summary>
 	/// Gets values for specified <paramref name="In" /> in key -> value map
