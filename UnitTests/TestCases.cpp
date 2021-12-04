@@ -1572,7 +1572,7 @@ void Test62()
 
 	ASSERT_EQUAL(2, failures[x].InPos);
 	ASSERT_EQUAL(1, failures[x].ContainsPos);
-	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Path end between /\ and IN, first I matches to I, repeats onto / and then N doesnt match with \/AM
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Path end between /\ and IN, first I matches to I, repeats onto / and then N doesnt match with \/AM or I doesn't match with \
 
 	ASSERT_EQUAL(2, failures[x].InPos);
 	ASSERT_EQUAL(1, failures[x].ContainsPos);
@@ -1580,7 +1580,7 @@ void Test62()
 
 	ASSERT_EQUAL(4, failures[x].InPos);
 	ASSERT_EQUAL(1, failures[x].ContainsPos);
-	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Path end between /A and IN, I repeats 4 times (I, /, \, /) and then N doesn't match to A
+	ASSERT_EQUAL(DEBUG_FAILURE_REASON_NO_PATH, failures[x++].Reason); // Path end between /A and IN, I matches with second / and then N doesn't match to A or I doesn't match with A
 
 	ASSERT_EQUAL(6, failures[x].InPos);
 	ASSERT_EQUAL(0, failures[x].ContainsPos);
